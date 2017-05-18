@@ -117,18 +117,22 @@ impl Driver for IPC {
             if slice.len() > 0 {
                 let procs = unsafe { &mut process::PROCS };
                 for (i, process) in procs.iter().enumerate() {
-                    match process {
-                        &Some(ref p) => {
-                            let s = p.package_name.as_bytes();
-                            // are slices equal?
-                            if s.len() == slice.len() &&
-                               s.iter()
-                                .zip(slice.iter())
-                                .all(|(c1, c2)| c1 == c2) {
-                                return ReturnCode::SuccessWithValue { value: (i as usize) + 1 };
+                    if appid.idx() != i {
+                        match process {
+                            &Some(ref p) => {
+                                let s = p.package_name.as_bytes();
+                                // are slices equal?
+                                if s.len() == slice.len() &&
+                                   s.iter()
+                                    .zip(slice.iter())
+                                    .all(|(c1, c2)| c1 == c2) {
+                                    return ReturnCode::SuccessWithValue { value: (i as usize) + 1 };
+                                }
                             }
+                            &None => {}
                         }
-                        &None => {}
+                    } else {
+                        {}
                     }
                 }
             }
