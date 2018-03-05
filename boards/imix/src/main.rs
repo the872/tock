@@ -6,7 +6,7 @@
 #![no_std]
 #![no_main]
 #![feature(asm, const_fn, lang_items, compiler_builtins_lib, const_cell_new)]
-#![deny(missing_docs)]
+#![warn(missing_docs)]
 
 extern crate capsules;
 extern crate compiler_builtins;
