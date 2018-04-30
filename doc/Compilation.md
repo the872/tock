@@ -471,7 +471,7 @@ variable `EXTERN_LIBS` in your application Makefile, e.g.
 
 To manually include an external library, add the library to each `LIBS_$(arch)`
 (i.e. `LIBS_cortex-m0`) variable. You can include header paths using the
-standard search mechanisms (i.e. `CPPFLAGS += -I<path>`).
+standard search mechanisms (i.e. `override CPPFLAGS += -I<path>`).
 
 
 ## Loading the kernel and processes onto a board
