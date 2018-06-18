@@ -1,0 +1,11 @@
+/* Memory Space Definitions, 512K flash, 64K ram */
+ROM_ORIGIN  = 0x00000000;
+ROM_LENGTH  = 128K;
+PROG_ORIGIN = 0x00030000;
+PROG_LENGTH = 384K;
+RAM_ORIGIN  = 0x20000000;
+RAM_LENGTH  = 64K;
+
+MPU_MIN_ALIGN = 8K;
+
+INCLUDE ../kernel_layout.ld
