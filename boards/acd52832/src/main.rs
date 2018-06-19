@@ -14,6 +14,7 @@ extern crate nrf5x;
 
 use capsules::virtual_alarm::VirtualMuxAlarm;
 use nrf5x::rtc::Rtc;
+use kernel::hil::pwm::Pwm;
 
 const LED1_PIN: usize = 26;
 const LED2_PIN: usize = 22;
@@ -350,6 +351,8 @@ pub unsafe fn reset_handler() {
     };
 
     let mut chip = nrf52::chip::NRF52::new();
+
+    nrf52::pwm::PWM0.start(&nrf5x::pinmux::Pinmux::new(31), 2400, 1200);
 
     // debug!("Initialization complete. Entering main loop\r");
     // debug!("{}", &nrf52::ficr::FICR_INSTANCE);
