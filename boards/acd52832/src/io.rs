@@ -3,9 +3,9 @@ use kernel::debug;
 use kernel::hil::led;
 use nrf5x;
 
-struct Writer { }
+struct Writer {}
 
-static mut WRITER: Writer = Writer {  };
+static mut WRITER: Writer = Writer {};
 
 impl Write for Writer {
     fn write_str(&mut self, _: &str) -> ::core::fmt::Result {

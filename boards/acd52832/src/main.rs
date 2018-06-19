@@ -13,9 +13,9 @@ extern crate nrf52;
 extern crate nrf5x;
 
 use capsules::virtual_alarm::VirtualMuxAlarm;
-use nrf5x::rtc::Rtc;
-use kernel::hil::pwm::Pwm;
 use kernel::hil::gpio::Pin;
+use kernel::hil::pwm::Pwm;
+use nrf5x::rtc::Rtc;
 
 const LED1_PIN: usize = 26;
 const LED2_PIN: usize = 22;
@@ -63,7 +63,8 @@ pub struct Platform {
         'static,
         capsules::virtual_alarm::VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>,
     >,
-    gpio_async: &'static capsules::gpio_async::GPIOAsync<'static, capsules::mcp230xx::MCP230xx<'static>>,
+    gpio_async:
+        &'static capsules::gpio_async::GPIOAsync<'static, capsules::mcp230xx::MCP230xx<'static>>,
 }
 
 impl kernel::Platform for Platform {
@@ -160,10 +161,6 @@ pub unsafe fn reset_handler() {
         ]
     );
 
-
-
-
-
     // Make non-volatile memory writable and activate the reset button
     let uicr = nrf52::uicr::Uicr::new();
     nrf52::nvmc::NVMC.erase_uicr();
@@ -253,36 +250,45 @@ pub unsafe fn reset_handler() {
     let kc = static_init!(capsules::console::App, capsules::console::App::default());
     kernel::debug::assign_console_driver(Some(console), kc);
 
-
-    let i2c_mux = static_init!(capsules::virtual_i2c::MuxI2C<'static>, capsules::virtual_i2c::MuxI2C::new(&nrf52::i2c::TWIM0));
-    nrf52::i2c::TWIM0.configure(nrf5x::pinmux::Pinmux::new(21), nrf5x::pinmux::Pinmux::new(20));
+    let i2c_mux = static_init!(
+        capsules::virtual_i2c::MuxI2C<'static>,
+        capsules::virtual_i2c::MuxI2C::new(&nrf52::i2c::TWIM0)
+    );
+    nrf52::i2c::TWIM0.configure(
+        nrf5x::pinmux::Pinmux::new(21),
+        nrf5x::pinmux::Pinmux::new(20),
+    );
     nrf52::i2c::TWIM0.set_client(i2c_mux);
 
     // Configure the MCP23017. Device address 0x20.
     let mcp23017_i2c = static_init!(
         capsules::virtual_i2c::I2CDevice,
-        capsules::virtual_i2c::I2CDevice::new(i2c_mux, 0x40));
+        capsules::virtual_i2c::I2CDevice::new(i2c_mux, 0x40)
+    );
     let mcp23017 = static_init!(
         capsules::mcp230xx::MCP230xx<'static>,
-        capsules::mcp230xx::MCP230xx::new(mcp23017_i2c,
-                                          Some(&nrf5x::gpio::PORT[11]),
-                                          Some(&nrf5x::gpio::PORT[12]),
-                                          &mut capsules::mcp230xx::BUFFER,
-                                          8, 2));
+        capsules::mcp230xx::MCP230xx::new(
+            mcp23017_i2c,
+            Some(&nrf5x::gpio::PORT[11]),
+            Some(&nrf5x::gpio::PORT[12]),
+            &mut capsules::mcp230xx::BUFFER,
+            8,
+            2
+        )
+    );
     mcp23017_i2c.set_client(mcp23017);
     nrf5x::gpio::PORT[11].set_client(mcp23017);
     nrf5x::gpio::PORT[12].set_client(mcp23017);
 
     // Create an array of the GPIO extenders so we can pass them to an
     // administrative layer that provides a single interface to them all.
-    let async_gpio_ports = static_init!(
-        [&'static capsules::mcp230xx::MCP230xx; 1],
-        [mcp23017]);
+    let async_gpio_ports = static_init!([&'static capsules::mcp230xx::MCP230xx; 1], [mcp23017]);
 
     // `gpio_async` is the object that manages all of the extenders.
     let gpio_async = static_init!(
         capsules::gpio_async::GPIOAsync<'static, capsules::mcp230xx::MCP230xx<'static>>,
-        capsules::gpio_async::GPIOAsync::new(async_gpio_ports));
+        capsules::gpio_async::GPIOAsync::new(async_gpio_ports)
+    );
     // Setup the clients correctly.
     for port in async_gpio_ports.iter() {
         port.set_client(gpio_async);
@@ -356,8 +362,6 @@ pub unsafe fn reset_handler() {
 
     let mut chip = nrf52::chip::NRF52::new();
 
-
-
     nrf5x::gpio::PORT[31].make_output();
     nrf5x::gpio::PORT[31].clear();
     let buzzer_pinmux = nrf5x::pinmux::Pinmux::new(31);
@@ -381,4 +385,3 @@ pub unsafe fn reset_handler() {
 
     kernel::kernel_loop(&platform, &mut chip, &mut PROCESSES, Some(&platform.ipc));
 }
-
