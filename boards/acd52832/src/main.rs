@@ -53,7 +53,7 @@ pub struct Platform {
     >,
     button: &'static capsules::button::Button<'static, nrf5x::gpio::GPIOPin>,
     console: &'static capsules::console::Console<'static, nrf52::uart::Uarte>,
-    gpio: &'static capsules::gpio::GPIO<'static, nrf5x::gpio::GPIOPin>,
+    // gpio: &'static capsules::gpio::GPIO<'static, nrf5x::gpio::GPIOPin>,
     led: &'static capsules::led::LED<'static, nrf5x::gpio::GPIOPin>,
     rng: &'static capsules::rng::SimpleRng<'static, nrf5x::trng::Trng<'static>>,
     temp: &'static capsules::temperature::TemperatureSensor<'static>,
@@ -72,7 +72,7 @@ impl kernel::Platform for Platform {
     {
         match driver_num {
             capsules::console::DRIVER_NUM => f(Some(self.console)),
-            capsules::gpio::DRIVER_NUM => f(Some(self.gpio)),
+            // capsules::gpio::DRIVER_NUM => f(Some(self.gpio)),
             capsules::alarm::DRIVER_NUM => f(Some(self.alarm)),
             capsules::led::DRIVER_NUM => f(Some(self.led)),
             capsules::button::DRIVER_NUM => f(Some(self.button)),
@@ -92,27 +92,27 @@ pub unsafe fn reset_handler() {
     // Loads relocations and clears BSS
     nrf52::init();
 
-    // GPIOs
-    let gpio_pins = static_init!(
-        [&'static nrf5x::gpio::GPIOPin; 15],
-        [
-            &nrf5x::gpio::PORT[3], // Bottom right header on DK board
-            &nrf5x::gpio::PORT[4],
-            &nrf5x::gpio::PORT[28],
-            &nrf5x::gpio::PORT[29],
-            &nrf5x::gpio::PORT[30],
-            &nrf5x::gpio::PORT[31], // -----
-            &nrf5x::gpio::PORT[12], // Top mid header on DK board
-            &nrf5x::gpio::PORT[11], // -----
-            &nrf5x::gpio::PORT[27], // Top left header on DK board
-            &nrf5x::gpio::PORT[26],
-            &nrf5x::gpio::PORT[2],
-            &nrf5x::gpio::PORT[25],
-            &nrf5x::gpio::PORT[24],
-            &nrf5x::gpio::PORT[23],
-            &nrf5x::gpio::PORT[22], // -----
-        ]
-    );
+    // // GPIOs
+    // let gpio_pins = static_init!(
+    //     [&'static nrf5x::gpio::GPIOPin; 1],
+    //     [
+    //         &nrf5x::gpio::PORT[3], // Bottom right header on DK board
+    //         // &nrf5x::gpio::PORT[4],
+    //         // &nrf5x::gpio::PORT[28],
+    //         // &nrf5x::gpio::PORT[29],
+    //         // &nrf5x::gpio::PORT[30],
+    //         // &nrf5x::gpio::PORT[31], // -----
+    //         // &nrf5x::gpio::PORT[12], // Top mid header on DK board
+    //         // &nrf5x::gpio::PORT[11], // -----
+    //         // &nrf5x::gpio::PORT[27], // Top left header on DK board
+    //         // &nrf5x::gpio::PORT[26],
+    //         // &nrf5x::gpio::PORT[2],
+    //         // &nrf5x::gpio::PORT[25],
+    //         // &nrf5x::gpio::PORT[24],
+    //         // &nrf5x::gpio::PORT[23],
+    //         // &nrf5x::gpio::PORT[22], // -----
+    //     ]
+    // );
 
     // LEDs
     let led_pins = static_init!(
@@ -179,13 +179,13 @@ pub unsafe fn reset_handler() {
     //     Some(&nrf5x::gpio::PORT[debug_pin3_index]),
     // );
 
-    let gpio = static_init!(
-        capsules::gpio::GPIO<'static, nrf5x::gpio::GPIOPin>,
-        capsules::gpio::GPIO::new(gpio_pins)
-    );
-    for pin in gpio_pins.iter() {
-        pin.set_client(gpio);
-    }
+    // let gpio = static_init!(
+    //     capsules::gpio::GPIO<'static, nrf5x::gpio::GPIOPin>,
+    //     capsules::gpio::GPIO::new(gpio_pins)
+    // );
+    // for pin in gpio_pins.iter() {
+    //     pin.set_client(gpio);
+    // }
 
     // LEDs
     let led = static_init!(
@@ -342,7 +342,7 @@ pub unsafe fn reset_handler() {
         ble_radio: ble_radio,
         console: console,
         led: led,
-        gpio: gpio,
+        // gpio: gpio,
         rng: rng,
         temp: temp,
         alarm: alarm,
