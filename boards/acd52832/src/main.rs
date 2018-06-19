@@ -125,11 +125,11 @@ pub unsafe fn reset_handler() {
             ),
             (
                 &nrf5x::gpio::PORT[LED2_PIN],
-                capsules::led::ActivationMode::ActiveHigh
+                capsules::led::ActivationMode::ActiveLow
             ),
             (
                 &nrf5x::gpio::PORT[LED3_PIN],
-                capsules::led::ActivationMode::ActiveHigh
+                capsules::led::ActivationMode::ActiveLow
             ),
             (
                 &nrf5x::gpio::PORT[LED4_PIN],
@@ -338,8 +338,8 @@ pub unsafe fn reset_handler() {
     while !nrf52::clock::CLOCK.low_started() {}
     while !nrf52::clock::CLOCK.high_started() {}
 
-    debug_gpio!(0, make_output);
-    debug_gpio!(0, clear);
+    // debug_gpio!(0, make_output);
+    // debug_gpio!(0, clear);
 
     let platform = Platform {
         button: button,
@@ -360,7 +360,8 @@ pub unsafe fn reset_handler() {
 
     nrf5x::gpio::PORT[31].make_output();
     nrf5x::gpio::PORT[31].clear();
-    nrf52::pwm::PWM0.start(&nrf5x::pinmux::Pinmux::new(31), 2400, 1200);
+    let buzzer_pinmux = nrf5x::pinmux::Pinmux::new(31);
+    nrf52::pwm::PWM0.start(&buzzer_pinmux, 2400, 1200);
 
     // debug!("Initialization complete. Entering main loop\r");
     // debug!("{}", &nrf52::ficr::FICR_INSTANCE);
@@ -375,6 +376,8 @@ pub unsafe fn reset_handler() {
         &mut PROCESSES,
         FAULT_RESPONSE,
     );
+
+    // nrf52::pwm::PWM0.stop(&buzzer_pinmux);
 
     kernel::kernel_loop(&platform, &mut chip, &mut PROCESSES, Some(&platform.ipc));
 }
