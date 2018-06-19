@@ -2,7 +2,7 @@
 
 TOCK_ARCH=cortex-m4
 TARGET=thumbv7em-none-eabi
-PLATFORM=nrf52dk
+PLATFORM=acd52832
 
 include ../Makefile.common
 
