@@ -53,7 +53,7 @@ pub struct Platform {
         VirtualMuxAlarm<'static, Rtc>,
     >,
     button: &'static capsules::button::Button<'static, nrf5x::gpio::GPIOPin>,
-    console: &'static capsules::console::Console<'static, nrf52::uart::Uarte>,
+    console: &'static capsules::console::Console<'static, capsules::segger_rtt::SeggerRtt<'static, VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>>>,
     gpio: &'static capsules::gpio::GPIO<'static, nrf5x::gpio::GPIOPin>,
     led: &'static capsules::led::LED<'static, nrf5x::gpio::GPIOPin>,
     rng: &'static capsules::rng::SimpleRng<'static, nrf5x::trng::Trng<'static>>,
@@ -61,10 +61,11 @@ pub struct Platform {
     ipc: kernel::ipc::IPC,
     alarm: &'static capsules::alarm::AlarmDriver<
         'static,
-        capsules::virtual_alarm::VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>,
+        VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>,
     >,
     gpio_async:
         &'static capsules::gpio_async::GPIOAsync<'static, capsules::mcp230xx::MCP230xx<'static>>,
+    rtt: &'static capsules::segger_rtt::SeggerRtt<'static, VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>>,
 }
 
 impl kernel::Platform for Platform {
@@ -227,23 +228,60 @@ pub unsafe fn reset_handler() {
         capsules::virtual_alarm::VirtualMuxAlarm::new(mux_alarm)
     );
 
-    nrf52::uart::UARTE0.configure(
-        nrf5x::pinmux::Pinmux::new(6), // tx
-        nrf5x::pinmux::Pinmux::new(8), // rx
-        nrf5x::pinmux::Pinmux::new(7), // cts
-        nrf5x::pinmux::Pinmux::new(5),
-    ); // rts
+    // nrf52::uart::UARTE0.configure(
+    //     nrf5x::pinmux::Pinmux::new(6), // tx
+    //     nrf5x::pinmux::Pinmux::new(8), // rx
+    //     nrf5x::pinmux::Pinmux::new(7), // cts
+    //     nrf5x::pinmux::Pinmux::new(5),
+    // ); // rts
+    // let console = static_init!(
+    //     capsules::console::Console<nrf52::uart::Uarte>,
+    //     capsules::console::Console::new(
+    //         &nrf52::uart::UARTE0,
+    //         115200,
+    //         &mut capsules::console::WRITE_BUF,
+    //         &mut capsules::console::READ_BUF,
+    //         kernel::Grant::create()
+    //     )
+    // );
+    // kernel::hil::uart::UART::set_client(&nrf52::uart::UARTE0, console);
+    // console.initialize();
+
+    // RTT and Console
+    let virtual_alarm_rtt = static_init!(
+        capsules::virtual_alarm::VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>,
+        capsules::virtual_alarm::VirtualMuxAlarm::new(mux_alarm)
+    );
+
+    let rtt_memory = static_init!(
+        capsules::segger_rtt::SeggerRttMemory,
+        capsules::segger_rtt::SeggerRttMemory::new(b"Terminal\0",
+            &mut capsules::segger_rtt::UP_BUFFER,
+            b"Terminal\0",
+            &mut capsules::segger_rtt::DOWN_BUFFER)
+    );
+
+    let rtt = static_init!(
+        capsules::segger_rtt::SeggerRtt<VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>>,
+        capsules::segger_rtt::SeggerRtt::new(virtual_alarm_rtt, rtt_memory,
+            &mut capsules::segger_rtt::UP_BUFFER,
+            &mut capsules::segger_rtt::DOWN_BUFFER)
+    );
+    virtual_alarm_rtt.set_client(rtt);
+
+    // rtt.say();
+
     let console = static_init!(
-        capsules::console::Console<nrf52::uart::Uarte>,
+        capsules::console::Console<capsules::segger_rtt::SeggerRtt<VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>>>,
         capsules::console::Console::new(
-            &nrf52::uart::UARTE0,
+            rtt,
             115200,
             &mut capsules::console::WRITE_BUF,
             &mut capsules::console::READ_BUF,
             kernel::Grant::create()
         )
     );
-    kernel::hil::uart::UART::set_client(&nrf52::uart::UARTE0, console);
+    kernel::hil::uart::UART::set_client(rtt, console);
     console.initialize();
 
     // Attach the kernel debug interface to this console
@@ -332,6 +370,8 @@ pub unsafe fn reset_handler() {
     );
     nrf5x::trng::TRNG.set_client(rng);
 
+
+
     // Start all of the clocks. Low power operation will require a better
     // approach than this.
     nrf52::clock::CLOCK.low_stop();
@@ -357,6 +397,7 @@ pub unsafe fn reset_handler() {
         temp: temp,
         alarm: alarm,
         gpio_async: gpio_async,
+        rtt:rtt,
         ipc: kernel::ipc::IPC::new(),
     };
 
@@ -365,7 +406,7 @@ pub unsafe fn reset_handler() {
     nrf5x::gpio::PORT[31].make_output();
     nrf5x::gpio::PORT[31].clear();
     let buzzer_pinmux = nrf5x::pinmux::Pinmux::new(31);
-    nrf52::pwm::PWM0.start(&buzzer_pinmux, 2400, 1200);
+    // nrf52::pwm::PWM0.start(&buzzer_pinmux, 2400, 1200);
 
     // debug!("Initialization complete. Entering main loop\r");
     // debug!("{}", &nrf52::ficr::FICR_INSTANCE);
