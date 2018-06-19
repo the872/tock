@@ -61,7 +61,7 @@ pub struct Platform {
         'static,
         capsules::virtual_alarm::VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>,
     >,
-    // gpio_async: &'static capsules::gpio_async::GPIOAsync<'static, capsules::mcp23008::MCP23008<'static>>,
+    gpio_async: &'static capsules::gpio_async::GPIOAsync<'static, capsules::mcp23008::MCP23008<'static>>,
 }
 
 impl kernel::Platform for Platform {
@@ -78,7 +78,7 @@ impl kernel::Platform for Platform {
             capsules::rng::DRIVER_NUM => f(Some(self.rng)),
             capsules::ble_advertising_driver::DRIVER_NUM => f(Some(self.ble_radio)),
             capsules::temperature::DRIVER_NUM => f(Some(self.temp)),
-            // capsules::gpio_async::DRIVER_NUM => f(Some(self.gpio_async)),
+            capsules::gpio_async::DRIVER_NUM => f(Some(self.gpio_async)),
             kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
             _ => f(None),
         }
@@ -252,39 +252,39 @@ pub unsafe fn reset_handler() {
     kernel::debug::assign_console_driver(Some(console), kc);
 
 
-    // let i2c_mux = static_init!(capsules::virtual_i2c::MuxI2C<'static>, capsules::virtual_i2c::MuxI2C::new(&nrf52::i2c::TWIM0));
-    // nrf52::i2c::TWIM0.configure(nrf5x::pinmux::Pinmux::new(21), nrf5x::pinmux::Pinmux::new(20));
-    // nrf52::i2c::TWIM0.set_client(i2c_mux);
+    let i2c_mux = static_init!(capsules::virtual_i2c::MuxI2C<'static>, capsules::virtual_i2c::MuxI2C::new(&nrf52::i2c::TWIM0));
+    nrf52::i2c::TWIM0.configure(nrf5x::pinmux::Pinmux::new(21), nrf5x::pinmux::Pinmux::new(20));
+    nrf52::i2c::TWIM0.set_client(i2c_mux);
 
-    // // Configure the MCP23008. Device address 0x20.
-    // let mcp23008_i2c = static_init!(
-    //     capsules::virtual_i2c::I2CDevice,
-    //     capsules::virtual_i2c::I2CDevice::new(i2c_mux, 0x20));
-    // let mcp23008 = static_init!(
-    //     capsules::mcp23008::MCP23008<'static>,
-    //     capsules::mcp23008::MCP23008::new(mcp23008_i2c,
-    //                                       Some(&nrf5x::gpio::PORT[11]),
-    //                                       Some(&nrf5x::gpio::PORT[12]),
-    //                                       &mut capsules::mcp23008::BUFFER,
-    //                                       8, 2));
-    // mcp23008_i2c.set_client(mcp23008);
-    // nrf5x::gpio::PORT[11].set_client(mcp23008);
-    // nrf5x::gpio::PORT[12].set_client(mcp23008);
+    // Configure the MCP23008. Device address 0x20.
+    let mcp23008_i2c = static_init!(
+        capsules::virtual_i2c::I2CDevice,
+        capsules::virtual_i2c::I2CDevice::new(i2c_mux, 0x40));
+    let mcp23008 = static_init!(
+        capsules::mcp23008::MCP23008<'static>,
+        capsules::mcp23008::MCP23008::new(mcp23008_i2c,
+                                          Some(&nrf5x::gpio::PORT[11]),
+                                          Some(&nrf5x::gpio::PORT[12]),
+                                          &mut capsules::mcp23008::BUFFER,
+                                          8, 2));
+    mcp23008_i2c.set_client(mcp23008);
+    nrf5x::gpio::PORT[11].set_client(mcp23008);
+    nrf5x::gpio::PORT[12].set_client(mcp23008);
 
-    // // Create an array of the GPIO extenders so we can pass them to an
-    // // administrative layer that provides a single interface to them all.
-    // let async_gpio_ports = static_init!(
-    //     [&'static capsules::mcp23008::MCP23008; 1],
-    //     [mcp23008]);
+    // Create an array of the GPIO extenders so we can pass them to an
+    // administrative layer that provides a single interface to them all.
+    let async_gpio_ports = static_init!(
+        [&'static capsules::mcp23008::MCP23008; 1],
+        [mcp23008]);
 
-    // // `gpio_async` is the object that manages all of the extenders.
-    // let gpio_async = static_init!(
-    //     capsules::gpio_async::GPIOAsync<'static, capsules::mcp23008::MCP23008<'static>>,
-    //     capsules::gpio_async::GPIOAsync::new(async_gpio_ports));
-    // // Setup the clients correctly.
-    // for port in async_gpio_ports.iter() {
-    //     port.set_client(gpio_async);
-    // }
+    // `gpio_async` is the object that manages all of the extenders.
+    let gpio_async = static_init!(
+        capsules::gpio_async::GPIOAsync<'static, capsules::mcp23008::MCP23008<'static>>,
+        capsules::gpio_async::GPIOAsync::new(async_gpio_ports));
+    // Setup the clients correctly.
+    for port in async_gpio_ports.iter() {
+        port.set_client(gpio_async);
+    }
 
     let ble_radio = static_init!(
         capsules::ble_advertising_driver::BLE<
@@ -345,7 +345,7 @@ pub unsafe fn reset_handler() {
         rng: rng,
         temp: temp,
         alarm: alarm,
-        // gpio_async: gpio_async,
+        gpio_async: gpio_async,
         ipc: kernel::ipc::IPC::new(),
     };
 
