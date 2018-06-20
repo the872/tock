@@ -55,7 +55,7 @@ struct AdcRegisters {
     samplerate: ReadWrite<u32, SAMPLERATE::Register>,
     _reserved6: [u8; 48],
     /// Pointer to store samples to
-    result_ptr: VolatileCell<*const ()>,
+    result_ptr: VolatileCell<*const u16>,
     /// Number of 16 bit samples to save in RAM
     result_maxcnt: ReadWrite<u32, RESULT_MAXCNT::Register>,
     /// Number of 16 bit samples recorded to RAM
@@ -314,7 +314,7 @@ impl hil::adc::Adc for Adc {
         regs.result_maxcnt.write(RESULT_MAXCNT::MAXCNT.val(1));
         // Where to put the reading.
         unsafe {
-            regs.result_ptr.set(&SAMPLE as *const u16 as *const ());
+            regs.result_ptr.set(SAMPLE.as_ptr());
         }
 
         // No automatic sampling, will trigger manually.
