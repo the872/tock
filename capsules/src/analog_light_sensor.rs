@@ -1,12 +1,8 @@
 //! Basic driver for an analog light sensor.
 
-
-use kernel::common::cells::{OptionalCell};
+use kernel::common::cells::OptionalCell;
 use kernel::hil;
 use kernel::ReturnCode;
-
-
-
 
 pub struct AnalogLightSensor<'a, A: hil::adc::Adc + 'a> {
     adc: &'a A,
@@ -14,12 +10,8 @@ pub struct AnalogLightSensor<'a, A: hil::adc::Adc + 'a> {
     client: OptionalCell<&'a hil::sensors::AmbientLightClient>,
 }
 
-
 impl<'a, A: hil::adc::Adc + 'a> AnalogLightSensor<'a, A> {
-    pub fn new(
-        adc: &'a A,
-        channel: &'a <A as hil::adc::Adc>::Channel,
-    ) -> AnalogLightSensor<'a, A> {
+    pub fn new(adc: &'a A, channel: &'a <A as hil::adc::Adc>::Channel) -> AnalogLightSensor<'a, A> {
         AnalogLightSensor {
             adc: adc,
             channel: channel,
@@ -31,12 +23,7 @@ impl<'a, A: hil::adc::Adc + 'a> AnalogLightSensor<'a, A> {
 /// Callbacks from the ADC driver
 impl<'a, A: hil::adc::Adc + 'a> hil::adc::Client for AnalogLightSensor<'a, A> {
     fn sample_ready(&self, sample: u16) {
-
-
         self.client.map(|client| client.callback(sample as usize));
-
-
-
     }
 }
 
