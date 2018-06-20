@@ -1,10 +1,14 @@
-use cortexm4::{self, nvic};
-use deferred_call_tasks::DeferredCallTask;
-use i2c;
+
 use kernel;
 use kernel::common::deferred_call;
+
+use cortexm4::{self, nvic};
 use nrf5x;
 use nrf5x::peripheral_interrupts::*;
+
+use adc;
+use deferred_call_tasks::DeferredCallTask;
+use i2c;
 use nvmc;
 use radio;
 use spi;
@@ -86,6 +90,7 @@ impl kernel::Chip for NRF52 {
                             }
                         }
                         SPIM2_SPIS2_SPI2 => spi::SPIM2.handle_interrupt(),
+                        ADC => adc::ADC.handle_interrupt(),
                         _ => debug!("NvicIdx not supported by Tock"),
                     }
                     let n = nvic::Nvic::new(interrupt);
