@@ -414,8 +414,8 @@ pub unsafe fn reset_handler() {
     let buzzer_pinmux = nrf5x::pinmux::Pinmux::new(31);
     // nrf52::pwm::PWM0.start(&buzzer_pinmux, 2400, 1200);
 
-    // debug!("Initialization complete. Entering main loop\r");
-    // debug!("{}", &nrf52::ficr::FICR_INSTANCE);
+    debug!("Initialization complete. Entering main loop\r");
+    debug!("{}", &nrf52::ficr::FICR_INSTANCE);
 
     extern "C" {
         /// Beginning of the ROM region containing app images.
