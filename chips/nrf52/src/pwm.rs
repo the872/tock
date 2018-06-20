@@ -1,3 +1,5 @@
+//! PWM driver for nRF52.
+
 use kernel::common::cells::VolatileCell;
 use kernel::common::regs::{self, ReadOnly, ReadWrite, WriteOnly};
 use kernel::common::StaticRef;
@@ -60,7 +62,6 @@ struct PwmRegisters {
 #[repr(C)]
 struct PwmSeqRegisters {
     seq_ptr: VolatileCell<*const u16>,
-    // seq_ptr: VolatileCell<u32>,
     seq_cnt: ReadWrite<u32, SEQ_CNT::Register>,
     seq_refresh: ReadWrite<u32, SEQ_REFRESH::Register>,
     seq_enddelay: ReadWrite<u32, SEQ_ENDDELAY::Register>,
@@ -189,6 +190,15 @@ impl Pwm {
         let prescaler = 0;
         let counter_top = (16000000 / frequency_hz) >> prescaler;
 
+        // Use the passed in duty cycle to calculate the value we pass to the
+        // hardware. A 50% duty cycle is half of counter_top, a 10% duty cycle
+        // would be 90% of counter_top.
+        //
+        //                               duty_cycle
+        //  dc_out = counter_top * (1 -  ---------- )
+        //                                 100000
+        let dc_out = counter_top - ((1600 * duty_cycle) / frequency_hz);
+
         // Configure the pin
         regs.psel_out[0].set(*pin);
 
@@ -209,7 +219,7 @@ impl Pwm {
 
         // Setup the duty cycles
         unsafe {
-            DUTY_CYCLES[0] = duty_cycle as u16;
+            DUTY_CYCLES[0] = dc_out as u16;
             regs.seq0.seq_ptr.set(&DUTY_CYCLES as *const u16);
         }
         regs.seq0.seq_cnt.write(SEQ_CNT::CNT.val(1));
