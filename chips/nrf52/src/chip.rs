@@ -1,4 +1,3 @@
-
 use kernel;
 use kernel::common::deferred_call;
 
