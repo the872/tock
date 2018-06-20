@@ -245,15 +245,18 @@ const SAADC_BASE: StaticRef<AdcRegisters> =
 
 pub static mut ADC: Adc = Adc::new(SAADC_BASE);
 
-enum State {
-    Idle,
-    SingleSampleStartAdc,
-    SingleSampleSample,
-}
+// Buffer to save completed sample to.
+static mut SAMPLE: [u16; 1] = [0; 1];
+
+// enum State {
+//     Idle,
+//     SingleSampleStartAdc,
+//     SingleSampleSample,
+// }
 
 pub struct Adc {
     registers: StaticRef<AdcRegisters>,
-    state: Cell<State>,
+    // state: Cell<State>,
 
     // // state tracking for the ADC
     // enabled: Cell<bool>,
@@ -283,7 +286,7 @@ impl Adc {
     const fn new(registers: StaticRef<AdcRegisters>) -> Adc {
         Adc {
             registers: registers,
-            state: Cell::new(State::Idle),
+            // state: Cell::new(State::Idle),
             client: OptionalCell::empty(),
         }
     }
@@ -293,6 +296,32 @@ impl Adc {
     }
 
     pub fn handle_interrupt(&self) {
+        let regs = &*self.registers;
+
+        // Determine what event occurred.
+        if regs.events_started.is_set(EVENT::EVENT) {
+            regs.events_started.write(EVENT::EVENT::CLEAR);
+            // ADC has started, now issue the sample.
+            regs.tasks_sample.write(TASK::TASK::SET);
+
+        } else if regs.events_end.is_set(EVENT::EVENT) {
+            regs.events_end.write(EVENT::EVENT::CLEAR);
+            // Reading finished. Turn off the ADC.
+            regs.tasks_stop.write(TASK::TASK::SET);
+
+        } else if regs.events_stopped.is_set(EVENT::EVENT) {
+            regs.events_stopped.write(EVENT::EVENT::CLEAR);
+            // ADC is stopped. Disable and return value.
+            regs.enable.write(ENABLE::ENABLE::CLEAR);
+
+            let val = unsafe {SAMPLE[0]};
+            self.client.map(|client| {
+                client.sample_ready(val);
+            });
+        }
+
+
+
     }
 }
 
@@ -343,6 +372,10 @@ impl hil::adc::Adc for Adc {
 
         // Do one measurement.
         regs.result_maxcnt.write(RESULT_MAXCNT::MAXCNT.val(1));
+        // Where to put the reading.
+        unsafe {
+            regs.result_ptr.set(&SAMPLE as *const u16 as *const ());
+        }
 
         // No automatic sampling, will trigger manually.
         regs.samplerate.write(SAMPLERATE::MODE::Task);
@@ -352,8 +385,8 @@ impl hil::adc::Adc for Adc {
         regs.enable.write(ENABLE::ENABLE::SET);
         // NRF_SAADC->ENABLE = SAADC_ENABLE_ENABLE_Enabled << SAADC_ENABLE_ENABLE_Pos;
 
-        // Enable started and sample done interrupts.
-        regs.inten.write(INTEN::STARTED::SET + INTEN::DONE::SET);
+        // Enable started, sample end, and stopped interrupts.
+        regs.inten.write(INTEN::STARTED::SET + INTEN::END::SET + INTEN::STOPPED::SET);
 
         // // Calibrate the SAADC (only needs to be done once in a while)
         // NRF_SAADC->TASKS_CALIBRATEOFFSET = 1;
