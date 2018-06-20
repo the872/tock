@@ -1,5 +1,11 @@
+//! ADC driver for the nRF52. Uses the SAADC peripheral.
+
 use kernel::common::StaticRef;
+use kernel::hil;
 use kernel::common::regs::{self, ReadOnly, ReadWrite, WriteOnly};
+use kernel::common::cells::OptionalCell;
+
+// https://github.com/andenore/NordicSnippets/blob/master/examples/saadc/main.c
 
 #[repr(C)]
 struct AdcRegisters {
@@ -43,7 +49,7 @@ struct AdcRegisters {
     ch: [AdcChRegisters; 8],
     _reserved4: [u8; 96],
     /// Resolution configuration
-    resolution: ReadWrite<u32>,
+    resolution: ReadWrite<u32, RESOLUTION::Register>,
     /// Oversampling configuration. OVERSAMPLE should not be combined with SCAN. The RES
     oversample: ReadWrite<u32>,
     /// Controls normal or continuous sample rate
@@ -190,8 +196,30 @@ register_bitfields![u32,
     LIMIT [
         LOW OFFSET(0) NUMBITS(16) [],
         HIGH OFFSET(16) NUMBITS(16) []
+    ],
+    RESOLUTION [
+        VAL OFFSET(0) NUMBITS(3) [
+            bit8 = 0,
+            bit10 = 1,
+            bit12 = 2,
+            bit14 = 3,
+        ]
     ]
 ];
+
+#[derive(Copy, Clone, Debug)]
+enum AdcChannel {
+    AnalogInput0 = 1,
+    AnalogInput1 = 2,
+    AnalogInput2 = 3,
+    AnalogInput3 = 4,
+    AnalogInput4 = 5,
+    AnalogInput5 = 6,
+    AnalogInput6 = 7,
+    AnalogInput7 = 8,
+    VDD = 9,
+    VDDHDIV5 = 0xD,
+}
 
 const SAADC_BASE: StaticRef<AdcRegisters> =
     unsafe { StaticRef::new(0x40007000 as *const AdcRegisters) };
@@ -220,7 +248,7 @@ pub struct Adc {
     stopped_buffer: TakeCell<'static, [u16]>,
 
     // ADC client to send sample complete notifications to
-    client: Cell<Option<&'static EverythingClient>>,
+    client: OptionalCell<&'static hil::adc::Client>,
 }
 
 impl Adc {
@@ -228,5 +256,79 @@ impl Adc {
         Adc {
             registers: registers,
         }
+    }
+
+    pub fn handle_interrupt(&self) {
+    }
+}
+
+/// Implements an ADC capable reading ADC samples on any channel.
+impl hil::adc::Adc for Adc {
+    type Channel = AdcChannel;
+
+    fn initialize(&self) -> ReturnCode {
+        ReturnCode::SUCCESS
+    }
+
+    fn sample(&self, channel: &Self::Channel) -> ReturnCode {
+        let regs: = &*self.registers;
+
+
+        regs.ch[0].pselp.write(PSEL::PSEL.val(channel as u32));
+        regs.ch[0].config.write(CONFIG::GAIN::Gain1_4 + CONFIG::REFSEL::VDD1_4
+            + CONFIG::TACQ::us10);
+
+        regs.resolution.write(RESOLUTION::VAL::bit14);
+
+
+
+
+
+        // always configure to 1KHz to get the slowest clock with single sampling
+        let res = self.config_and_enable(1000);
+
+        if res != ReturnCode::SUCCESS {
+            return res;
+        } else if !self.enabled.get() {
+            ReturnCode::EOFF
+        } else if self.active.get() {
+            // only one operation at a time
+            ReturnCode::EBUSY
+        } else {
+            self.active.set(true);
+            self.continuous.set(false);
+            self.timer_repeats.set(0);
+            self.timer_counts.set(0);
+
+            let cfg = SequencerConfig::MUXNEG.val(0x7) + // ground pad
+                SequencerConfig::MUXPOS.val(channel.chan_num)
+                + SequencerConfig::INTERNAL.val(0x2 | channel.internal)
+                + SequencerConfig::RES::Bits12
+                + SequencerConfig::TRGSEL::Software
+                + SequencerConfig::GCOMP::Disable
+                + SequencerConfig::GAIN::Gain0p5x
+                + SequencerConfig::BIPOLAR::Disable
+                + SequencerConfig::HWLA::Disable;
+            regs.seqcfg.write(cfg);
+
+            // clear any current status
+            self.clear_status();
+
+            // enable end of conversion interrupt
+            regs.ier.write(Interrupt::SEOC::SET);
+
+            // initiate conversion
+            regs.cr.write(Control::STRIG::SET);
+
+            ReturnCode::SUCCESS
+        }
+    }
+
+    fn sample_continuous(&self, channel: &Self::Channel, frequency: u32) -> ReturnCode {
+        ReturnCode::FAIL
+    }
+
+    fn stop_sampling(&self) -> ReturnCode {
+        ReturnCode::FAIL
     }
 }
