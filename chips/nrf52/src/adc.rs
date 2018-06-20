@@ -1,14 +1,10 @@
 //! ADC driver for the nRF52. Uses the SAADC peripheral.
 
-use core::cell::Cell;
-
 use kernel::common::StaticRef;
 use kernel::hil;
 use kernel::ReturnCode;
-use kernel::common::regs::{self, ReadOnly, ReadWrite, WriteOnly};
+use kernel::common::regs::{ReadOnly, ReadWrite, WriteOnly};
 use kernel::common::cells::{OptionalCell, VolatileCell};
-
-// https://github.com/andenore/NordicSnippets/blob/master/examples/saadc/main.c
 
 #[repr(C)]
 struct AdcRegisters {
@@ -248,37 +244,8 @@ pub static mut ADC: Adc = Adc::new(SAADC_BASE);
 // Buffer to save completed sample to.
 static mut SAMPLE: [u16; 1] = [0; 1];
 
-// enum State {
-//     Idle,
-//     SingleSampleStartAdc,
-//     SingleSampleSample,
-// }
-
 pub struct Adc {
     registers: StaticRef<AdcRegisters>,
-    // state: Cell<State>,
-
-    // // state tracking for the ADC
-    // enabled: Cell<bool>,
-    // adc_clk_freq: Cell<u32>,
-    // active: Cell<bool>,
-    // continuous: Cell<bool>,
-    // dma_running: Cell<bool>,
-    // cpu_clock: Cell<bool>,
-
-    // // timer fire counting for slow sampling rates
-    // timer_repeats: Cell<u8>,
-    // timer_counts: Cell<u8>,
-
-    // // DMA peripheral, buffers, and length
-    // rx_dma: Cell<Option<&'static dma::DMAChannel>>,
-    // rx_dma_peripheral: dma::DMAPeripheral,
-    // rx_length: Cell<usize>,
-    // next_dma_buffer: TakeCell<'static, [u16]>,
-    // next_dma_length: Cell<usize>,
-    // stopped_buffer: TakeCell<'static, [u16]>,
-
-    // ADC client to send sample complete notifications to
     client: OptionalCell<&'static hil::adc::Client>,
 }
 
@@ -319,9 +286,6 @@ impl Adc {
                 client.sample_ready(val);
             });
         }
-
-
-
     }
 }
 
@@ -336,22 +300,6 @@ impl hil::adc::Adc for Adc {
     fn sample(&self, channel: &Self::Channel) -> ReturnCode {
         let regs = &*self.registers;
 
-        // // Configure SAADC singled-ended channel, Internal reference (0.6V) and 1/6 gain.
-        // NRF_SAADC->CH[0].CONFIG = (SAADC_CH_CONFIG_GAIN_Gain1_6    << SAADC_CH_CONFIG_GAIN_Pos) |
-        //                         (SAADC_CH_CONFIG_MODE_SE         << SAADC_CH_CONFIG_MODE_Pos) |
-        //                         (SAADC_CH_CONFIG_REFSEL_Internal << SAADC_CH_CONFIG_REFSEL_Pos) |
-        //                         (SAADC_CH_CONFIG_RESN_Bypass     << SAADC_CH_CONFIG_RESN_Pos) |
-        //                         (SAADC_CH_CONFIG_RESP_Bypass     << SAADC_CH_CONFIG_RESP_Pos) |
-        //                         (SAADC_CH_CONFIG_TACQ_3us        << SAADC_CH_CONFIG_TACQ_Pos);
-
-        // // Configure the SAADC channel with VDD as positive input, no negative input(single ended).
-        // NRF_SAADC->CH[0].PSELP = SAADC_CH_PSELP_PSELP_VDD << SAADC_CH_PSELP_PSELP_Pos;
-        // NRF_SAADC->CH[0].PSELN = SAADC_CH_PSELN_PSELN_NC << SAADC_CH_PSELN_PSELN_Pos;
-
-        // // Configure the SAADC resolution.
-        // NRF_SAADC->RESOLUTION = SAADC_RESOLUTION_VAL_14bit << SAADC_RESOLUTION_VAL_Pos;
-
-
         // Positive goes to the channel passed in, negative not connected.
         regs.ch[0].pselp.write(PSEL::PSEL.val(*channel as u32));
         regs.ch[0].pseln.write(PSEL::PSEL::NotConnected);
@@ -363,13 +311,6 @@ impl hil::adc::Adc for Adc {
         // Set max resolution.
         regs.resolution.write(RESOLUTION::VAL::bit14);
 
-
-
-
-        // // Configure result to be put in RAM at the location of "result" variable.
-        // NRF_SAADC->RESULT.MAXCNT = 1;
-        // NRF_SAADC->RESULT.PTR = (uint32_t)&result;
-
         // Do one measurement.
         regs.result_maxcnt.write(RESULT_MAXCNT::MAXCNT.val(1));
         // Where to put the reading.
@@ -379,96 +320,20 @@ impl hil::adc::Adc for Adc {
 
         // No automatic sampling, will trigger manually.
         regs.samplerate.write(SAMPLERATE::MODE::Task);
-        // NRF_SAADC->SAMPLERATE = SAADC_SAMPLERATE_MODE_Task << SAADC_SAMPLERATE_MODE_Pos;
 
         // Enable the ADC
         regs.enable.write(ENABLE::ENABLE::SET);
-        // NRF_SAADC->ENABLE = SAADC_ENABLE_ENABLE_Enabled << SAADC_ENABLE_ENABLE_Pos;
 
         // Enable started, sample end, and stopped interrupts.
         regs.inten.write(INTEN::STARTED::SET + INTEN::END::SET + INTEN::STOPPED::SET);
 
-        // // Calibrate the SAADC (only needs to be done once in a while)
-        // NRF_SAADC->TASKS_CALIBRATEOFFSET = 1;
-        // while (NRF_SAADC->EVENTS_CALIBRATEDONE == 0);
-        // NRF_SAADC->EVENTS_CALIBRATEDONE = 0;
-        // while (NRF_SAADC->STATUS == (SAADC_STATUS_STATUS_Busy <<SAADC_STATUS_STATUS_Pos));
-
-        // // Start the SAADC and wait for the started event.
-        // NRF_SAADC->TASKS_START = 1;
-        // while (NRF_SAADC->EVENTS_STARTED == 0);
-        // NRF_SAADC->EVENTS_STARTED = 0;
-
         // Start the SAADC and wait for the started interrupt.
         regs.tasks_start.write(TASK::TASK::SET);
 
-        // // Do a SAADC sample, will put the result in the configured RAM buffer.
-        // NRF_SAADC->TASKS_SAMPLE = 1;
-        // while (NRF_SAADC->EVENTS_END == 0);
-        // NRF_SAADC->EVENTS_END = 0;
-
-        // // Convert the result to voltage
-        // // Result = [V(p) - V(n)] * GAIN/REFERENCE * 2^(RESOLUTION)
-        // // Result = (VDD - 0) * ((1/6) / 0.6) * 2^14
-        // // VDD = Result / 4551.1
-        // precise_result = (float)result / 4551.1f;
-        // precise_result; // to get rid of set but not used warning
-
-        // // Stop the SAADC, since it's not used anymore.
-        // NRF_SAADC->TASKS_STOP = 1;
-        // while (NRF_SAADC->EVENTS_STOPPED == 0);
-        // NRF_SAADC->EVENTS_STOPPED = 0;
-
-
-
-
-
-
-
-
-
-
-        // // always configure to 1KHz to get the slowest clock with single sampling
-        // let res = self.config_and_enable(1000);
-
-        // if res != ReturnCode::SUCCESS {
-        //     return res;
-        // } else if !self.enabled.get() {
-        //     ReturnCode::EOFF
-        // } else if self.active.get() {
-        //     // only one operation at a time
-        //     ReturnCode::EBUSY
-        // } else {
-        //     self.active.set(true);
-        //     self.continuous.set(false);
-        //     self.timer_repeats.set(0);
-        //     self.timer_counts.set(0);
-
-        //     let cfg = SequencerConfig::MUXNEG.val(0x7) + // ground pad
-        //         SequencerConfig::MUXPOS.val(channel.chan_num)
-        //         + SequencerConfig::INTERNAL.val(0x2 | channel.internal)
-        //         + SequencerConfig::RES::Bits12
-        //         + SequencerConfig::TRGSEL::Software
-        //         + SequencerConfig::GCOMP::Disable
-        //         + SequencerConfig::GAIN::Gain0p5x
-        //         + SequencerConfig::BIPOLAR::Disable
-        //         + SequencerConfig::HWLA::Disable;
-        //     regs.seqcfg.write(cfg);
-
-        //     // clear any current status
-        //     self.clear_status();
-
-        //     // enable end of conversion interrupt
-        //     regs.ier.write(Interrupt::SEOC::SET);
-
-        //     // initiate conversion
-        //     regs.cr.write(Control::STRIG::SET);
-
         ReturnCode::SUCCESS
-        // }
     }
 
-    fn sample_continuous(&self, channel: &Self::Channel, frequency: u32) -> ReturnCode {
+    fn sample_continuous(&self, _channel: &Self::Channel, _frequency: u32) -> ReturnCode {
         ReturnCode::FAIL
     }
 
