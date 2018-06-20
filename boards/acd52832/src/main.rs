@@ -15,6 +15,7 @@ extern crate nrf5x;
 use capsules::virtual_alarm::VirtualMuxAlarm;
 use kernel::hil::gpio::Pin;
 use kernel::hil::pwm::Pwm;
+use kernel::hil;
 use nrf5x::rtc::Rtc;
 
 const LED1_PIN: usize = 26;
@@ -66,6 +67,8 @@ pub struct Platform {
         &'static capsules::alarm::AlarmDriver<'static, VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>>,
     gpio_async:
         &'static capsules::gpio_async::GPIOAsync<'static, capsules::mcp230xx::MCP230xx<'static>>,
+    light:
+        &'static capsules::ambient_light::AmbientLight<'static>,
 }
 
 impl kernel::Platform for Platform {
@@ -83,6 +86,7 @@ impl kernel::Platform for Platform {
             capsules::ble_advertising_driver::DRIVER_NUM => f(Some(self.ble_radio)),
             capsules::temperature::DRIVER_NUM => f(Some(self.temp)),
             capsules::gpio_async::DRIVER_NUM => f(Some(self.gpio_async)),
+            capsules::ambient_light::DRIVER_NUM => f(Some(self.light)),
             kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
             _ => f(None),
         }
@@ -358,6 +362,22 @@ pub unsafe fn reset_handler() {
     );
     nrf5x::trng::TRNG.set_client(rng);
 
+    // Setup Analog Light Sensor
+    let analog_light_sensor = static_init!(
+         capsules::analog_light_sensor::AnalogLightSensor<'static, nrf52::adc::Adc>,
+         capsules::analog_light_sensor::AnalogLightSensor::new(
+            &nrf52::adc::ADC,
+            &nrf52::adc::AdcChannel::AnalogInput5));
+    nrf52::adc::ADC.set_client(analog_light_sensor);
+
+    let light = static_init!(
+         capsules::ambient_light::AmbientLight<'static>,
+         capsules::ambient_light::AmbientLight::new(analog_light_sensor,
+             kernel::Grant::create()));
+     hil::sensors::AmbientLight::set_client(analog_light_sensor, light);
+
+
+
     // Start all of the clocks. Low power operation will require a better
     // approach than this.
     nrf52::clock::CLOCK.low_stop();
@@ -383,6 +403,7 @@ pub unsafe fn reset_handler() {
         temp: temp,
         alarm: alarm,
         gpio_async: gpio_async,
+        light: light,
         ipc: kernel::ipc::IPC::new(),
     };
 
