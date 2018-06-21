@@ -23,7 +23,7 @@
 //!  hil::nonvolatile_storage::NonvolatileStorage       kernel::Driver
 //! +-----------------------------------------------------------------+
 //! |                                                                 |
-//! | capsules::nonvolatile_storage_driver::NonvolatileStorage (this) |
+//! |    capsules::nonvolatile_storage::NonvolatileStorage (this)     |
 //! |                                                                 |
 //! +-----------------------------------------------------------------+
 //!            hil::nonvolatile_storage::NonvolatileStorage
@@ -38,8 +38,8 @@
 //!
 //! ```rust
 //! let nonvolatile_storage = static_init!(
-//!     capsules::nonvolatile_storage_driver::NonvolatileStorage<'static>,
-//!     capsules::nonvolatile_storage_driver::NonvolatileStorage::new(
+//!     capsules::nonvolatile_storage::NonvolatileStorage<'static>,
+//!     capsules::nonvolatile_storage::NonvolatileStorage::new(
 //!         fm25cl,                      // The underlying storage driver.
 //!         kernel::Grant::create(),     // Storage for app-specific state.
 //!         3000,                        // The byte start address for the userspace
@@ -48,7 +48,7 @@
 //!         0,                           // The byte start address of the region
 //!                                      // that is accessible by the kernel.
 //!         3000,                        // The length of the kernel region.
-//!         &mut capsules::nonvolatile_storage_driver::BUFFER));
+//!         &mut capsules::nonvolatile_storage::BUFFER));
 //! hil::nonvolatile_storage::NonvolatileStorage::set_client(fm25cl, nonvolatile_storage);
 //! ```
 

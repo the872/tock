@@ -14,7 +14,7 @@ use nrf5x::rtc::Rtc;
 
 /// Supported drivers by the platform
 pub struct Platform {
-    ble_radio: &'static capsules::ble_advertising_driver::BLE<
+    ble_radio: &'static capsules::ble_advertising::BLE<
         'static,
         nrf52::radio::Radio,
         VirtualMuxAlarm<'static, Rtc>,
@@ -44,7 +44,7 @@ impl kernel::Platform for Platform {
             capsules::led::DRIVER_NUM => f(Some(self.led)),
             capsules::button::DRIVER_NUM => f(Some(self.button)),
             capsules::rng::DRIVER_NUM => f(Some(self.rng)),
-            capsules::ble_advertising_driver::DRIVER_NUM => f(Some(self.ble_radio)),
+            capsules::ble_advertising::DRIVER_NUM => f(Some(self.ble_radio)),
             capsules::temperature::DRIVER_NUM => f(Some(self.temp)),
             kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
             _ => f(None),
@@ -157,15 +157,11 @@ pub unsafe fn setup_board(
     kernel::debug::assign_console_driver(Some(console), kc);
 
     let ble_radio = static_init!(
-        capsules::ble_advertising_driver::BLE<
-            'static,
-            nrf52::radio::Radio,
-            VirtualMuxAlarm<'static, Rtc>,
-        >,
-        capsules::ble_advertising_driver::BLE::new(
+        capsules::ble_advertising::BLE<'static, nrf52::radio::Radio, VirtualMuxAlarm<'static, Rtc>>,
+        capsules::ble_advertising::BLE::new(
             &mut nrf52::radio::RADIO,
             kernel::Grant::create(),
-            &mut capsules::ble_advertising_driver::BUF,
+            &mut capsules::ble_advertising::BUF,
             ble_radio_virtual_alarm
         )
     );

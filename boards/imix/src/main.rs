@@ -97,7 +97,7 @@ struct Imix {
         'static,
         sam4l::usart::USART,
     >,
-    nonvolatile_storage: &'static capsules::nonvolatile_storage_driver::NonvolatileStorage<'static>,
+    nonvolatile_storage: &'static capsules::nonvolatile_storage::NonvolatileStorage<'static>,
 }
 
 // The RF233 radio stack requires our buffers for its SPI operations:
@@ -145,7 +145,7 @@ impl kernel::Platform for Imix {
             capsules::usb_user::DRIVER_NUM => f(Some(self.usb_driver)),
             capsules::ieee802154::DRIVER_NUM => f(Some(self.radio_driver)),
             capsules::nrf51822_serialization::DRIVER_NUM => f(Some(self.nrf51822)),
-            capsules::nonvolatile_storage_driver::DRIVER_NUM => f(Some(self.nonvolatile_storage)),
+            capsules::nonvolatile_storage::DRIVER_NUM => f(Some(self.nonvolatile_storage)),
             kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
             _ => f(None),
         }
@@ -588,15 +588,15 @@ pub unsafe fn reset_handler() {
     hil::flash::HasClient::set_client(&sam4l::flashcalw::FLASH_CONTROLLER, nv_to_page);
 
     let nonvolatile_storage = static_init!(
-        capsules::nonvolatile_storage_driver::NonvolatileStorage<'static>,
-        capsules::nonvolatile_storage_driver::NonvolatileStorage::new(
+        capsules::nonvolatile_storage::NonvolatileStorage<'static>,
+        capsules::nonvolatile_storage::NonvolatileStorage::new(
             nv_to_page,
             kernel::Grant::create(),
             0x60000, // Start address for userspace accessible region
             0x20000, // Length of userspace accessible region
             0,       // Start address of kernel accessible region
             0,       // Length of kernel accessible region
-            &mut capsules::nonvolatile_storage_driver::BUFFER
+            &mut capsules::nonvolatile_storage::BUFFER
         )
     );
     hil::nonvolatile_storage::NonvolatileStorage::set_client(nv_to_page, nonvolatile_storage);

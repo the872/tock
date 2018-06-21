@@ -64,12 +64,12 @@
 //!
 //! ```rust
 //!     let ble_radio = static_init!(
-//!     nrf5x::ble_advertising_driver::BLE
+//!     nrf5x::ble_advertising::BLE
 //!     <'static, nrf52::radio::Radio, VirtualMuxAlarm<'static, Rtc>>,
-//!     nrf5x::ble_advertising_driver::BLE::new(
+//!     nrf5x::ble_advertising::BLE::new(
 //!         &mut nrf52::radio::RADIO,
 //!     kernel::Grant::create(),
-//!         &mut nrf5x::ble_advertising_driver::BUF,
+//!         &mut nrf5x::ble_advertising::BUF,
 //!         ble_radio_virtual_alarm));
 //!    nrf5x::ble_advertising_hil::BleAdvertisementDriver::set_rx_client(&nrf52::radio::RADIO,
 //!                                                                      ble_radio);

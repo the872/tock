@@ -49,10 +49,10 @@ These drivers provide support for various ICs.
 
 Support for wireless radios.
 
-- **[nRF51822 Serialization](src/nrf51822_serialization.rs)**: Kernel support
-  for using the nRF51 serialization library.
+- **[nRF51822 Serialization](src/drivers/nrf51822_serialization.rs)**: Kernel
+  support for using the nRF51 serialization library.
 - **[RF233](src/rf233.rs)**: Driver for RF233 radio.
-- **[BLE Advertising](src/ble_advertising_driver.rs)**: Driver for sending BLE
+- **[BLE Advertising](src/drivers/ble_advertising.rs)**: Driver for sending BLE
   advertisements.
 
 ### Libraries
@@ -69,28 +69,28 @@ Protocol stacks and other libraries.
 
 These capsules provide a `Driver` interface for common MCU peripherals.
 
-- **[ADC](src/adc.rs)**: Individual and continuous samples.
-- **[Alarm](src/alarm.rs)**: Oneshot and periodic timers.
-- **[CRC](src/crc.rs)**: CRC calculation.
-- **[DAC](src/dac.rs)**: Digital to analog conversion.
-- **[GPIO](src/gpio.rs)**: GPIO configuring and control.
-- **[I2C](src/i2c_master_slave_driver.rs)**: I2C master and slave access.
-- **[RNG](src/rng.rs)**: Random number generation.
-- **[SPI](src/spi.rs)**: SPI master and slave.
+- **[ADC](src/drivers/adc.rs)**: Individual and continuous samples.
+- **[Alarm](src/drivers/alarm.rs)**: Oneshot and periodic timers.
+- **[CRC](src/drivers/crc.rs)**: CRC calculation.
+- **[DAC](src/drivers/dac.rs)**: Digital to analog conversion.
+- **[GPIO](src/drivers/gpio.rs)**: GPIO configuring and control.
+- **[I2C](src/drivers/idrivers/2c_master_slave.rs)**: I2C master and slave access.
+- **[RNG](src/drivers/rng.rs)**: Random number generation.
+- **[SPI](src/drivers/spi.rs)**: SPI master and slave.
 
 
 ### Helpful Userspace Capsules
 
 These provide common and better abstractions for userspace.
 
-- **[Ambient Light](src/ambient_light.rs)**: Query light sensors.
-- **[App Flash](src/app_flash_driver.rs)**: Allow applications to write their
+- **[Ambient Light](src/drivers/ambient_light.rs)**: Query light sensors.
+- **[App Flash](src/drivers/app_flash.rs)**: Allow applications to write their
   own flash.
-- **[Button](src/button.rs)**: Detect button presses.
-- **[Console](src/console.rs)**: UART console support.
-- **[Humidity](src/humidity.rs)**: Query humidity sensors.
-- **[LED](src/led.rs)**: Turn on and off LEDs.
-- **[Temperature](src/temperature.rs)**: Query temperature sensors.
+- **[Button](src/drivers/button.rs)**: Detect button presses.
+- **[Console](src/drivers/console.rs)**: UART console support.
+- **[Humidity](src/drivers/humidity.rs)**: Query humidity sensors.
+- **[LED](src/drivers/led.rs)**: Turn on and off LEDs.
+- **[Temperature](src/drivers/temperature.rs)**: Query temperature sensors.
 
 
 ### Virtualized Sensor Capsules for Userspace
@@ -98,11 +98,12 @@ These provide common and better abstractions for userspace.
 These provide virtualized (i.e. multiple applications can use them
 simultaneously) support for generic sensor interfaces.
 
-- **[Asynchronous GPIO](src/gpio_async.rs)**: GPIO pins accessed by split-phase
-  calls.
-- **[9DOF](src/ninedof.rs)**: 9DOF sensors (acceleration, magnetometer, gyroscope).
-- **[Nonvolatile Storage](src/nonvolatile_storage_driver.rs)**: Persistent storage for
-  userspace.
+- **[Asynchronous GPIO](src/drivers/gpio_async.rs)**: GPIO pins accessed by
+  split-phase calls.
+- **[9DOF](src/drivers/ninedof.rs)**: 9DOF sensors (acceleration, magnetometer,
+  gyroscope).
+- **[Nonvolatile Storage](src/drivers/nonvolatile_storage.rs)**: Persistent
+  storage for userspace.
 
 
 ### Virtualized Hardware Resources
