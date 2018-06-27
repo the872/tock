@@ -279,7 +279,8 @@ impl Adc {
             // ADC is stopped. Disable and return value.
             regs.enable.write(ENABLE::ENABLE::CLEAR);
 
-            let val = unsafe { SAMPLE[0] };
+            // Left justify to meet HIL requirements.
+            let val = unsafe { SAMPLE[0] } << 2;
             self.client.map(|client| {
                 client.sample_ready(val);
             });
@@ -290,10 +291,6 @@ impl Adc {
 /// Implements an ADC capable reading ADC samples on any channel.
 impl hil::adc::Adc for Adc {
     type Channel = AdcChannel;
-
-    fn initialize(&self) -> ReturnCode {
-        ReturnCode::SUCCESS
-    }
 
     fn sample(&self, channel: &Self::Channel) -> ReturnCode {
         let regs = &*self.registers;
@@ -339,5 +336,13 @@ impl hil::adc::Adc for Adc {
 
     fn stop_sampling(&self) -> ReturnCode {
         ReturnCode::FAIL
+    }
+
+    fn get_resolution_bits(&self) -> usize {
+        14
+    }
+
+    fn get_voltage_reference_mv(&self) -> Option<usize> {
+        Some(3300)
     }
 }
