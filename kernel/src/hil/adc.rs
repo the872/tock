@@ -36,7 +36,7 @@ pub trait Adc {
     /// voltage from the ADC reading.
     ///
     /// The returned reference voltage is in millivolts, or `None` if unknown.
-    fn get_voltage_reference(&self) -> Option<usize>;
+    fn get_voltage_reference_mv(&self) -> Option<usize>;
 }
 
 /// Trait for handling callbacks from simple ADC calls.
