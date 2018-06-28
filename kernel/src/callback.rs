@@ -1,60 +1,65 @@
 //! Data structure for storing a callback to userspace or kernelspace.
 
+use core::fmt;
 use core::ptr::NonNull;
+
 use process;
+use sched::Kernel;
 
 /// Userspace app identifier.
-#[derive(Clone, Copy, Eq, PartialEq, Debug)]
+#[derive(Clone, Copy)]
 pub struct AppId {
+    kernel: &'static Kernel,
     idx: usize,
 }
 
-/// The kernel can masquerade as an app. IDs >= this value are the kernel.
-/// These IDs are used to identify which kernel container is being accessed.
-const KERNEL_APPID_BOUNDARY: usize = 100;
+impl PartialEq for AppId {
+    fn eq(&self, other: &AppId) -> bool {
+        self.idx == other.idx
+    }
+}
+
+impl Eq for AppId {}
+
+impl fmt::Debug for AppId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.idx)
+    }
+}
 
 impl AppId {
-    crate fn new(idx: usize) -> AppId {
-        AppId { idx: idx }
-    }
-
-    crate const fn kernel_new(idx: usize) -> AppId {
-        AppId { idx: idx }
-    }
-
-    pub const fn is_kernel(self) -> bool {
-        self.idx >= KERNEL_APPID_BOUNDARY
-    }
-
-    pub const fn is_kernel_idx(idx: usize) -> bool {
-        idx >= KERNEL_APPID_BOUNDARY
+    crate fn new(kernel: &'static Kernel, idx: usize) -> AppId {
+        AppId {
+            kernel: kernel,
+            idx: idx,
+        }
     }
 
     pub fn idx(&self) -> usize {
         self.idx
     }
 
+    /// Returns the full address of the start and end of the flash region that
+    /// the app owns and can write to. This includes the app's code and data and
+    /// any padding at the end of the app. It does not include the TBF header,
+    /// or any space that the kernel is using for any potential bookkeeping.
     pub fn get_editable_flash_range(&self) -> (usize, usize) {
-        process::get_editable_flash_range(self.idx)
+        self.kernel.process_map_or((0, 0), self.idx, |process| {
+            let start = process.flash_non_protected_start() as usize;
+            let end = process.flash_end() as usize;
+            (start, end)
+        })
     }
 }
 
-#[derive(Clone, Copy, Debug)]
-crate enum RustOrRawFnPtr {
-    Raw {
-        ptr: NonNull<*mut ()>,
-    },
-    Rust {
-        func: fn(usize, usize, usize, usize),
-    },
-}
-
-/// Wrapper around a function pointer.
-#[derive(Clone, Copy, Debug)]
+/// Type for calling a callback in a process.
+///
+/// This is essentially a wrapper around a function pointer.
+#[derive(Clone, Copy)]
 pub struct Callback {
     app_id: AppId,
     appdata: usize,
-    fn_ptr: RustOrRawFnPtr,
+    fn_ptr: NonNull<*mut ()>,
 }
 
 impl Callback {
@@ -62,45 +67,29 @@ impl Callback {
         Callback {
             app_id: appid,
             appdata: appdata,
-            fn_ptr: RustOrRawFnPtr::Raw { ptr: fn_ptr },
+            fn_ptr: fn_ptr,
         }
     }
 
-    crate const fn kernel_new(appid: AppId, fn_ptr: fn(usize, usize, usize, usize)) -> Callback {
-        Callback {
-            app_id: appid,
-            appdata: 0,
-            fn_ptr: RustOrRawFnPtr::Rust { func: fn_ptr },
-        }
-    }
-
-    pub fn schedule(&mut self, r0: usize, r1: usize, r2: usize) -> bool {
-        if self.app_id.is_kernel() {
-            let fn_ptr = match self.fn_ptr {
-                RustOrRawFnPtr::Raw { ptr } => {
-                    panic!("Attempt to rust_call a raw function pointer: ptr {:?}", ptr)
-                }
-                RustOrRawFnPtr::Rust { func } => func,
-            };
-            fn_ptr(r0, r1, r2, self.appdata);
-            true
-        } else {
-            let fn_ptr = match self.fn_ptr {
-                RustOrRawFnPtr::Raw { ptr } => ptr,
-                RustOrRawFnPtr::Rust { func } => {
-                    panic!("Attempt to schedule rust function: func {:?}", func)
-                }
-            };
-            process::schedule(
-                process::FunctionCall {
+    /// Actually trigger the callback.
+    ///
+    /// This will queue the `Callback` for the associated process. It returns
+    /// `false` if the queue for the process is full and the callback could not
+    /// be scheduled.
+    ///
+    /// The arguments (`r0-r2`) are the values passed back to the process and
+    /// are specific to the individual `Driver` interfaces.
+    pub fn schedule(&self, r0: usize, r1: usize, r2: usize) -> bool {
+        self.app_id
+            .kernel
+            .process_map_or(false, self.app_id.idx(), |process| {
+                process.schedule(process::FunctionCall {
                     r0: r0,
                     r1: r1,
                     r2: r2,
                     r3: self.appdata,
-                    pc: fn_ptr.as_ptr() as usize,
-                },
-                self.app_id,
-            )
-        }
+                    pc: self.fn_ptr.as_ptr() as usize,
+                })
+            })
     }
 }
