@@ -250,4 +250,10 @@ impl hil::pwm::Pwm for Pwm {
     fn stop(&self, pin: &Self::Pin) -> ReturnCode {
         self.stop_pwm(pin)
     }
+
+    fn get_maximum_frequency_hz(&self) -> usize {
+        // Counter runs at 16 MHz, and the minimum value for the COUNTERTOP
+        // register is 3. 16000000 / 3 = 5333333
+        5333333
+    }
 }

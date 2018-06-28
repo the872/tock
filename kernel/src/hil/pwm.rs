@@ -18,6 +18,10 @@ pub trait Pwm {
 
     /// Stop a PWM pin output.
     fn stop(&self, pin: &Self::Pin) -> ReturnCode;
+
+    /// Return the maximum PWM frequency supported by the PWM implementation.
+    /// The frequency will be specified in Hertz.
+    fn get_maximum_frequency_hz(&self) -> usize;
 }
 
 /// Higher-level PWM interface that restricts the user to a specific PWM pin.
@@ -29,4 +33,8 @@ pub trait PwmPin {
 
     /// Stop a PWM output. Same as the `stop` function in the `Pwm` trait.
     fn stop(&self) -> ReturnCode;
+
+    /// Return the maximum PWM frequency supported by the PWM implementation.
+    /// Same as the `get_maximum_frequency_hz` function in the `Pwm` trait.
+    fn get_maximum_frequency_hz(&self) -> usize;
 }
