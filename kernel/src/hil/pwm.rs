@@ -1,6 +1,7 @@
 //! Interfaces for Pulse Width Modulation output.
 
 use returncode::ReturnCode;
+use capabilities::PwmCapability;
 
 /// PWM control for a single pin.
 pub trait Pwm {
@@ -14,10 +15,10 @@ pub trait Pwm {
     /// - `duty_cycle` is specified in hundredths of a percent. So setting
     ///   `duty_cycle` to 1 would mean a PWM output with a 0.01% duty cycle.
     ///   Passing 5000 would result in a 50% duty cycle.
-    fn start(&self, pin: &Self::Pin, frequency_hz: usize, duty_cycle: usize) -> ReturnCode;
+    fn start(&self, pin: &Self::Pin, frequency_hz: usize, duty_cycle: usize, cap: PwmCapability) -> ReturnCode;
 
     /// Stop a PWM pin output.
-    fn stop(&self, pin: &Self::Pin) -> ReturnCode;
+    fn stop(&self, pin: &Self::Pin, cap: PwmCapability) -> ReturnCode;
 
     /// Return the maximum PWM frequency supported by the PWM implementation.
     /// The frequency will be specified in Hertz.
