@@ -44,7 +44,8 @@ impl<A: hil::adc::Adc> hil::adc::Client for AnalogLightSensor<'a, A> {
         let measurement: usize = match self.sensor_type {
             AnalogLightSensorType::LightDependentResistor => {
                 // TODO: need to determine the actual value that the 5000 should be
-                (sample as usize * 5000) / 65535
+                ((sample as usize).saturating_sub(1250) * 5000) / 65535
+                // ((sample as usize) * 5000) / 65535
             }
         };
         self.client.map(|client| client.callback(measurement));
