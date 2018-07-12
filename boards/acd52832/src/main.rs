@@ -420,6 +420,7 @@ pub unsafe fn reset_handler() {
         capsules::buzzer_driver::Buzzer::new(
             virtual_pwm_buzzer,
             virtual_alarm_buzzer,
+            capsules::buzzer_driver::DEFAULT_MAX_BUZZ_TIME_MS,
             kernel::Grant::create()
         )
     );
