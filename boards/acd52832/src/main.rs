@@ -74,7 +74,10 @@ pub struct Platform {
     gpio_async:
         &'static capsules::gpio_async::GPIOAsync<'static, capsules::mcp230xx::MCP230xx<'static>>,
     light: &'static capsules::ambient_light::AmbientLight<'static>,
-    buzzer: &'static capsules::buzzer_driver::Buzzer<'static, capsules::virtual_alarm::VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>>,
+    buzzer: &'static capsules::buzzer_driver::Buzzer<
+        'static,
+        capsules::virtual_alarm::VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>,
+    >,
 }
 
 impl kernel::Platform for Platform {
@@ -412,11 +415,13 @@ pub unsafe fn reset_handler() {
     let buzzer = static_init!(
         capsules::buzzer_driver::Buzzer<
             'static,
-            capsules::virtual_alarm::VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>>,
+            capsules::virtual_alarm::VirtualMuxAlarm<'static, nrf5x::rtc::Rtc>,
+        >,
         capsules::buzzer_driver::Buzzer::new(
             virtual_pwm_buzzer,
             virtual_alarm_buzzer,
-            kernel::Grant::create())
+            kernel::Grant::create()
+        )
     );
     virtual_alarm_buzzer.set_client(buzzer);
 
@@ -431,8 +436,6 @@ pub unsafe fn reset_handler() {
     nrf52::clock::CLOCK.high_start();
     while !nrf52::clock::CLOCK.low_started() {}
     while !nrf52::clock::CLOCK.high_started() {}
-
-
 
     let platform = Platform {
         button: button,
