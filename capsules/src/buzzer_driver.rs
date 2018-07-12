@@ -30,6 +30,7 @@
 //!     capsules::buzzer_driver::Buzzer::new(
 //!         virtual_pwm_buzzer,
 //!         virtual_alarm_buzzer,
+//!         capsules::buzzer_driver::DEFAULT_MAX_BUZZ_TIME_MS,
 //!         kernel::Grant::create())
 //! );
 //! virtual_alarm_buzzer.set_client(buzzer);
@@ -44,6 +45,9 @@ use kernel::{AppId, Callback, Driver, Grant, ReturnCode};
 
 /// Syscall driver number.
 pub const DRIVER_NUM: usize = 0x90000;
+
+/// Standard max buzz time.
+pub const DEFAULT_MAX_BUZZ_TIME_MS: usize = 5000;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum BuzzerCommand {
@@ -68,15 +72,23 @@ pub struct Buzzer<'a, A: hil::time::Alarm> {
     apps: Grant<App>,
     // Which app is currently using the buzzer.
     active_app: OptionalCell<AppId>,
+    // Max buzz time.
+    max_duration_ms: usize,
 }
 
 impl<A: hil::time::Alarm> Buzzer<'a, A> {
-    pub fn new(pwm_pin: &'a hil::pwm::PwmPin, alarm: &'a A, grant: Grant<App>) -> Buzzer<'a, A> {
+    pub fn new(
+        pwm_pin: &'a hil::pwm::PwmPin,
+        alarm: &'a A,
+        max_duration_ms: usize,
+        grant: Grant<App>,
+    ) -> Buzzer<'a, A> {
         Buzzer {
             pwm_pin: pwm_pin,
             alarm: alarm,
             apps: grant,
             active_app: OptionalCell::empty(),
+            max_duration_ms: max_duration_ms,
         }
     }
 
@@ -201,7 +213,7 @@ impl<A: hil::time::Alarm> Driver for Buzzer<'a, A> {
 
             1 => {
                 let frequency_hz = arg1;
-                let duration_ms = cmp::min(arg2, 5000);
+                let duration_ms = cmp::min(arg2, self.max_duration_ms);
                 self.enqueue_command(BuzzerCommand::Buzz{frequency_hz, duration_ms}, appid)
             }
 
