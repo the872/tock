@@ -41,7 +41,7 @@ static mut SPI_WRITE_BUF: [u8; 64] = [0; 64];
 const NUM_PROCS: usize = 20;
 
 // How should the kernel respond when a process faults.
-const FAULT_RESPONSE: kernel::procs::FaultResponse = kernel::procs::FaultResponse::Panic;
+const FAULT_RESPONSE: kernel::procs::FaultResponse = kernel::procs::FaultResponse::Restart;
 
 // RAM to be shared by all application processes.
 #[link_section = ".app_memory"]
@@ -485,13 +485,13 @@ pub unsafe fn reset_handler() {
     //
     // Create a dummy object that provides the `ProcessManagementCapability` to
     // the `debug_process_restart` capsule.
-    // struct ProcessMgmtCap;
-    // unsafe impl capabilities::ProcessManagementCapability for ProcessMgmtCap {}
-    // let debug_process_restart = static_init!(
-    //     capsules::debug_process_restart::DebugProcessRestart<'static, sam4l::gpio::GPIOPin, ProcessMgmtCap>,
-    //     capsules::debug_process_restart::DebugProcessRestart::new(&sam4l::gpio::PA[16], ProcessMgmtCap)
-    // );
-    // sam4l::gpio::PA[16].set_client(debug_process_restart);
+    struct ProcessMgmtCap;
+    unsafe impl capabilities::ProcessManagementCapability for ProcessMgmtCap {}
+    let debug_process_restart = static_init!(
+        capsules::debug_process_restart::DebugProcessRestart<'static, sam4l::gpio::GPIOPin, ProcessMgmtCap>,
+        capsules::debug_process_restart::DebugProcessRestart::new(&sam4l::gpio::PA[16], ProcessMgmtCap)
+    );
+    sam4l::gpio::PA[16].set_client(debug_process_restart);
 
     let hail = Hail {
         console: console,

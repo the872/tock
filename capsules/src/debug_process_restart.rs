@@ -43,6 +43,7 @@ impl<'a, G: hil::gpio::Pin + hil::gpio::PinCtl, C: ProcessManagementCapability> 
     for DebugProcessRestart<'a, G, C>
 {
     fn fired(&self, _pin_num: usize) {
+        debug!("Crash!");
         hardfault_all_apps(&self.capability);
     }
 }

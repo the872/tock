@@ -83,12 +83,16 @@ pub struct App {
     app_buf2: Option<AppSlice<Shared, u8>>,
 }
 
-/// Buffers to use for DMA transfers
+/// Buffer to use for DMA transfers.
 /// The size is chosen somewhat arbitrarily, but has been tested. At 175000 Hz,
 /// buffers need to be swapped every 70 us and copied over before the next
 /// swap. In testing, it seems to keep up fine.
 pub static mut ADC_BUFFER1: [u16; 128] = [0; 128];
+
+/// Buffer to use for DMA transfers.
 pub static mut ADC_BUFFER2: [u16; 128] = [0; 128];
+
+/// Buffer to use for DMA transfers.
 pub static mut ADC_BUFFER3: [u16; 128] = [0; 128];
 
 /// Functions to create, initialize, and interact with the ADC
@@ -132,11 +136,11 @@ impl<A: hil::adc::Adc + hil::adc::AdcHighSpeed> Adc<'a, A> {
         }
     }
 
-    /// Store a buffer we've regained ownership of and return a handle to it
+    /// Store a buffer we've regained ownership of and return a handle to it.
     /// The handle can have `map` called on it in order to process the data in
-    /// the buffer
+    /// the buffer.
     ///
-    /// buf - buffer to be stored
+    /// - `buf` - buffer to be stored
     fn replace_buffer(&self, buf: &'static mut [u16]) -> &TakeCell<'static, [u16]> {
         if self.adc_buf1.is_none() {
             self.adc_buf1.replace(buf);
@@ -150,9 +154,9 @@ impl<A: hil::adc::Adc + hil::adc::AdcHighSpeed> Adc<'a, A> {
         }
     }
 
-    /// Find a buffer to give to the ADC to store samples in
+    /// Find a buffer to give to the ADC to store samples in.
     ///
-    /// closure - function to run on the found buffer
+    /// - `closure` - function to run on the found buffer
     fn take_and_map_buffer<F: FnOnce(&'static mut [u16])>(&self, closure: F) {
         if self.adc_buf1.is_some() {
             self.adc_buf1.take().map(|val| {
@@ -169,9 +173,9 @@ impl<A: hil::adc::Adc + hil::adc::AdcHighSpeed> Adc<'a, A> {
         }
     }
 
-    /// Collect a single analog sample on a channel
+    /// Collect a single analog sample on a channel.
     ///
-    /// channel - index into `channels` array, which channel to sample
+    /// - `channel` - index into `channels` array, which channel to sample
     fn sample(&self, channel: usize) -> ReturnCode {
         // only one sample at a time
         if self.active.get() {
@@ -794,11 +798,11 @@ impl<A: hil::adc::Adc + hil::adc::AdcHighSpeed> Driver for Adc<'a, A> {
         }
     }
 
-    /// Provides a callback which can be used to signal the application
+    /// Provides a callback which can be used to signal the application.
     ///
-    /// subscribe_num - which subscribe call this is
-    /// callback - callback object which can be scheduled to signal the
-    ///            application
+    /// - `subscribe_num` - which subscribe call this is
+    /// - `callback` - callback object which can be scheduled to signal the
+    ///                application
     fn subscribe(
         &self,
         subscribe_num: usize,
@@ -818,11 +822,12 @@ impl<A: hil::adc::Adc + hil::adc::AdcHighSpeed> Driver for Adc<'a, A> {
         }
     }
 
-    /// Method for the application to command or query this driver
+    /// Method for the application to command or query this driver.
     ///
-    /// command_num - which command call this is
-    /// data - value sent by the application, varying uses
-    /// _appid - application identifier, unused
+    /// - `command_num` - which command call this is
+    /// - `channel` - ADC channel to use
+    /// - `frequency` - ADC sample frequency for multiple-sample commands
+    /// - `_appid` - application identifier, unused
     fn command(
         &self,
         command_num: usize,
