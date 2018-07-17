@@ -174,13 +174,13 @@ impl<'a> UartMux<'a> {
     /// callback finishes the current read so the new one can start.
     /// Three cases:
     ///    1) We are in the midst of completing a read: let it restart the
-    ///       reads if needed (return true)
+    ///       reads if needed (return false)
     ///    2) We are in the midst of a read: abort so we can start a new
-    ///       read now (return false)
-    ///    3) We are idle: start reading (return true)
+    ///       read now (return true)
+    ///    3) We are idle: start reading (return false)
     fn start_receive(&self, rx_len: usize) -> bool {
         self.rx_buffer.take().map_or_else(
-        || {
+        || { // No rxbuf which means a read is ongoing
             if self.completing_read.get() {
                 // Do nothing, read completion will call start_receive when ready
                 false
@@ -302,7 +302,8 @@ impl<'a> hil::uart::UART for UartDevice<'a> {
         }
     }
 
-    // This is not virtualized. Calling this will cause all receives to stop.
+    // This virtualized device will abort its read: other devices
+    // devices will continue with their reads.
     fn abort_receive(&self) {
         self.state.set(UartDeviceReceiveState::Aborting);
         self.mux.uart.abort_receive();
