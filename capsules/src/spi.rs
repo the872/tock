@@ -280,7 +280,7 @@ impl<S: SpiMasterDevice> SpiMasterClient for Spi<'a, S> {
                 self.busy.set(false);
                 app.len = 0;
                 app.index = 0;
-                app.callback.take().map(|mut cb| {
+                app.callback.take().map(|cb| {
                     cb.schedule(app.len, 0, 0);
                 });
             } else {
@@ -497,7 +497,7 @@ impl<S: SpiSlaveDevice> SpiSlaveClient for SpiSlave<'a, S> {
                 self.busy.set(false);
                 app.len = 0;
                 app.index = 0;
-                app.callback.take().map(|mut cb| {
+                app.callback.take().map(|cb| {
                     cb.schedule(app.len, 0, 0);
                 });
             } else {
@@ -509,7 +509,7 @@ impl<S: SpiSlaveDevice> SpiSlaveClient for SpiSlave<'a, S> {
     // Simple callback for when chip has been selected
     fn chip_selected(&self) {
         self.app.map(move |app| {
-            app.selected_callback.take().map(|mut cb| {
+            app.selected_callback.take().map(|cb| {
                 cb.schedule(app.len, 0, 0);
             });
         });
