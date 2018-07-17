@@ -65,13 +65,11 @@ pub struct Console<'a, U: UART> {
     tx_buffer: TakeCell<'static, [u8]>,
     rx_in_progress: OptionalCell<AppId>,
     rx_buffer: TakeCell<'static, [u8]>,
-    baud_rate: u32,
 }
 
 impl<U: UART> Console<'a, U> {
     pub fn new(
         uart: &'a U,
-        baud_rate: u32,
         tx_buffer: &'static mut [u8],
         rx_buffer: &'static mut [u8],
         grant: Grant<App>,
@@ -83,17 +81,7 @@ impl<U: UART> Console<'a, U> {
             tx_buffer: TakeCell::new(tx_buffer),
             rx_in_progress: OptionalCell::empty(),
             rx_buffer: TakeCell::new(rx_buffer),
-            baud_rate: baud_rate,
         }
-    }
-
-    pub fn initialize(&self) {
-        self.uart.configure(uart::UARTParameters {
-            baud_rate: self.baud_rate,
-            stop_bits: uart::StopBits::One,
-            parity: uart::Parity::None,
-            hw_flow_control: false,
-        });
     }
 
     /// Internal helper function for setting up a new send transaction

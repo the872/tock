@@ -23,6 +23,7 @@ use capsules::alarm::AlarmDriver;
 use capsules::virtual_alarm::{MuxAlarm, VirtualMuxAlarm};
 use capsules::virtual_i2c::MuxI2C;
 use capsules::virtual_spi::{MuxSpiMaster, VirtualSpiMasterDevice};
+use capsules::virtual_uart::{UartDevice,UartMux};
 use kernel::component::Component;
 use kernel::hil;
 use kernel::hil::radio;
@@ -65,12 +66,12 @@ mod ipv6_lowpan_test;
 mod spi_dummy;
 #[allow(dead_code)]
 mod udp_lowpan_test;
-
 #[allow(dead_code)]
 mod aes_test;
-
 #[allow(dead_code)]
 mod aes_ccm_test;
+#[allow(dead_code)]
+mod virtual_uart_rx_test;
 
 #[allow(dead_code)]
 mod power;
@@ -94,7 +95,7 @@ static mut PROCESSES: [Option<&'static mut kernel::procs::Process<'static>>; NUM
 pub static mut STACK_MEMORY: [u8; 0x1000] = [0; 0x1000];
 
 struct Imix {
-    console: &'static capsules::console::Console<'static, sam4l::usart::USART>,
+    console: &'static capsules::console::Console<'static, UartDevice<'static>>,
     gpio: &'static capsules::gpio::GPIO<'static, sam4l::gpio::GPIOPin>,
     alarm: &'static AlarmDriver<'static, VirtualMuxAlarm<'static, sam4l::ast::Ast<'static>>>,
     temp: &'static capsules::temperature::TemperatureSensor<'static>,
@@ -131,6 +132,7 @@ struct Imix {
 static mut RF233_BUF: [u8; radio::MAX_BUF_SIZE] = [0x00; radio::MAX_BUF_SIZE];
 static mut RF233_REG_WRITE: [u8; 2] = [0x00; 2];
 static mut RF233_REG_READ: [u8; 2] = [0x00; 2];
+static mut UART_BUF: [u8; 128] = [0x00; 128];
 
 impl kernel::Platform for Imix {
     fn with_driver<F, R>(&self, driver_num: usize, f: F) -> R
@@ -254,8 +256,17 @@ pub unsafe fn reset_handler() {
         trng: true,
     });
 
-    let console = ConsoleComponent::new(&sam4l::usart::USART3, 115200).finalize();
+    let uart_mux = static_init!(
+       UartMux<'static>,
+       UartMux::new(&sam4l::usart::USART3, &mut UART_BUF, 115200)
+    );
+    sam4l::usart::USART3.set_mode(sam4l::usart::UsartMode::Uart);
+    uart_mux.initialize();
 
+    let console = ConsoleComponent::new(uart_mux).finalize();
+    debug!("Booting, about to start virtual uart test."); 
+//    virtual_uart_rx_test::run_virtual_uart_receive(uart_mux);
+  
     // Allow processes to communicate over BLE through the nRF51822
     let nrf_serialization = Nrf51822Component::new(&sam4l::usart::USART2).finalize();
 

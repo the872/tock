@@ -24,7 +24,7 @@ pub struct UARTParameters {
 }
 
 /// The type of error encountered during UART transaction.
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Error {
     /// Parity error during receive
     ParityError,

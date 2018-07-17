@@ -44,12 +44,14 @@ use kernel::ReturnCode;
 use kernel::common::cells::{OptionalCell, TakeCell};
 use kernel::common::{List, ListLink, ListNode};
 use kernel::hil;
+use kernel::hil::uart;
 
 const RX_BUF_LEN: usize = 64;
 pub static mut RX_BUF: [u8; RX_BUF_LEN] = [0; RX_BUF_LEN];
 
 pub struct UartMux<'a> {
     uart: &'a hil::uart::UART,
+    speed: u32,
     devices: List<'a, UartDevice<'a>>,
     inflight: OptionalCell<&'a UartDevice<'a>>,
     rx_buffer: TakeCell<'static, [u8]>,
@@ -143,14 +145,26 @@ impl<'a> hil::uart::Client for UartMux<'a> {
 }
 
 impl<'a> UartMux<'a> {
-    pub fn new(uart: &'a hil::uart::UART, rx_buffer: &'static mut [u8]) -> UartMux<'a> {
+    pub fn new(uart: &'a hil::uart::UART, 
+               rx_buffer: &'static mut [u8],
+               speed: u32) -> UartMux<'a> {
         UartMux {
             uart: uart,
+            speed: speed,
             devices: List::new(),
             inflight: OptionalCell::empty(),
             rx_buffer: TakeCell::new(rx_buffer),
             completing_read: Cell::new(false),
         }
+    }
+
+    pub fn initialize(&self) {
+        self.uart.configure(uart::UARTParameters {
+            baud_rate: self.speed,
+            stop_bits: uart::StopBits::One,
+            parity: uart::Parity::None,
+            hw_flow_control: false,
+        });
     }
 
     fn do_next_op(&self) {

@@ -18,43 +18,40 @@
 #![allow(dead_code)] // Components are intended to be conditionally included
 
 use capsules::console;
-use hil;
+use capsules::virtual_uart::{UartDevice,UartMux};
 use kernel;
 use kernel::component::Component;
 use kernel::Grant;
-use sam4l;
+use kernel::hil::uart::UART;
 
 pub struct ConsoleComponent {
-    uart: &'static sam4l::usart::USART,
-    baud_rate: u32,
+    uart: &'static UartMux<'static>,
 }
 
 impl ConsoleComponent {
-    pub fn new(uart: &'static sam4l::usart::USART, rate: u32) -> ConsoleComponent {
+    pub fn new(uart: &'static UartMux<'static>) -> ConsoleComponent {
         ConsoleComponent {
             uart: uart,
-            baud_rate: rate,
         }
     }
 }
 
 impl Component for ConsoleComponent {
-    type Output = &'static console::Console<'static, sam4l::usart::USART>;
+    type Output = &'static console::Console<'static, UartDevice<'static>>;
 
     unsafe fn finalize(&mut self) -> Self::Output {
-        sam4l::usart::USART3.set_mode(sam4l::usart::UsartMode::Uart);
+        let device = static_init!(UartDevice<'static>,
+                                  UartDevice::new(self.uart, false));
         let console = static_init!(
-            console::Console<sam4l::usart::USART>,
+            console::Console<UartDevice<'static>>,
             console::Console::new(
-                self.uart,
-                self.baud_rate,
+                device,
                 &mut console::WRITE_BUF,
                 &mut console::READ_BUF,
                 Grant::create()
             )
         );
-        hil::uart::UART::set_client(self.uart, console);
-        console.initialize();
+        device.set_client(console);
 
         // Attach the kernel debug interface to this console
         let kc = static_init!(console::App, console::App::default());
