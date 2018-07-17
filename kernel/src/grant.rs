@@ -24,12 +24,12 @@ pub struct AppliedGrant<T> {
 impl<T> AppliedGrant<T> {
     pub fn enter<F, R>(self, fun: F) -> R
     where
-        F: FnOnce(&mut Owned<T>, &mut Allocator) -> R,
+        F: FnOnce(&mut Owned<T>, &Allocator) -> R,
         R: Copy,
     {
-        let mut allocator = Allocator { appid: self.appid };
+        let allocator = Allocator { appid: self.appid };
         let mut root = unsafe { Owned::new(self.grant, self.appid) };
-        fun(&mut root, &mut allocator)
+        fun(&mut root, &allocator)
     }
 }
 
@@ -82,7 +82,7 @@ impl<T: ?Sized> DerefMut for Owned<T> {
 }
 
 impl Allocator {
-    pub fn alloc<T>(&mut self, data: T) -> Result<Owned<T>, Error> {
+    pub fn alloc<T>(&self, data: T) -> Result<Owned<T>, Error> {
         unsafe {
             self.appid
                 .kernel
@@ -158,7 +158,7 @@ impl<T: Default> Grant<T> {
 
     pub fn enter<F, R>(&self, appid: AppId, fun: F) -> Result<R, Error>
     where
-        F: FnOnce(&mut Borrowed<T>, &mut Allocator) -> R,
+        F: FnOnce(&mut Borrowed<T>, &Allocator) -> R,
         R: Copy,
     {
         unsafe {
@@ -219,8 +219,8 @@ impl<T: Default> Grant<T> {
                     new_grant.map_or(Err(Error::OutOfMemory), move |root_ptr| {
                         let root_ptr = root_ptr as *mut T;
                         let mut root = Borrowed::new(&mut *root_ptr, appid);
-                        let mut allocator = Allocator { appid: appid };
-                        let res = fun(&mut root, &mut allocator);
+                        let allocator = Allocator { appid: appid };
+                        let res = fun(&mut root, &allocator);
                         Ok(res)
                     })
                 })
