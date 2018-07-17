@@ -65,7 +65,7 @@ impl Callback {
         }
     }
 
-    pub fn schedule(&mut self, r0: usize, r1: usize, r2: usize) -> bool {
+    pub fn schedule(&self, r0: usize, r1: usize, r2: usize) -> bool {
         self.app_id
             .kernel
             .process_map_or(false, self.app_id.idx(), |process| {

@@ -300,7 +300,7 @@ impl<U: UART> Client for Console<'a, U> {
                             // Go ahead and signal the application
                             let written = app.write_len;
                             app.write_len = 0;
-                            app.write_callback.map(|mut cb| {
+                            app.write_callback.map(|cb| {
                                 cb.schedule(written, 0, 0);
                             });
                         }
@@ -311,7 +311,7 @@ impl<U: UART> Client for Console<'a, U> {
                         app.write_remaining = 0;
                         app.pending_write = false;
                         let r0 = isize::from(return_code) as usize;
-                        app.write_callback.map(|mut cb| {
+                        app.write_callback.map(|cb| {
                             cb.schedule(r0, 0, 0);
                         });
                     }
@@ -334,7 +334,7 @@ impl<U: UART> Client for Console<'a, U> {
                                 app.write_remaining = 0;
                                 app.pending_write = false;
                                 let r0 = isize::from(return_code) as usize;
-                                app.write_callback.map(|mut cb| {
+                                app.write_callback.map(|cb| {
                                     cb.schedule(r0, 0, 0);
                                 });
                                 false
@@ -357,7 +357,7 @@ impl<U: UART> Client for Console<'a, U> {
             .map(|appid| {
                 self.apps
                     .enter(appid, |app, _| {
-                        app.read_callback.map(|mut cb| {
+                        app.read_callback.map(|cb| {
                             // An iterator over the returned buffer yielding only the first `rx_len`
                             // bytes
                             let rx_buffer = buffer.iter().take(rx_len);
