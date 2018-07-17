@@ -41,6 +41,9 @@ pub enum Error {
     /// UART hardware was reset
     ResetError,
 
+    /// Read or write was aborted early
+    Aborted,
+
     /// No error occurred and the command completed successfully
     CommandComplete,
 }
