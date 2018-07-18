@@ -28,6 +28,7 @@ pub mod syscall;
 mod callback;
 mod driver;
 mod grant;
+mod introspection;
 mod mem;
 mod memop;
 mod platform;
