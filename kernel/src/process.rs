@@ -89,7 +89,7 @@ pub trait ProcessType {
     unsafe fn fault_state(&self);
 
     /// Get the name of the process. Used for IPC.
-    fn get_package_name(&self) -> &[u8];
+    fn get_package_name(&self) -> &'static str;
 
     // memop operations
 
@@ -187,6 +187,17 @@ pub trait ProcessType {
 
     unsafe fn fault_str(&self, writer: &mut Write);
     unsafe fn statistics_str(&self, writer: &mut Write);
+
+    // debug
+
+    /// Returns how many syscalls this app has called.
+    fn debug_syscall_count(&self) -> usize;
+
+    /// Returns how many callbacks for this process have been dropped.
+    fn debug_dropped_callback_count(&self) -> usize;
+
+    /// Returns how many times this process has been restarted.
+    fn debug_restart_count(&self) -> usize;
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -694,8 +705,8 @@ impl<S: SyscallInterface> ProcessType for Process<'a, S> {
         (self.mem_end() as *mut *mut u8).offset(-(grant_num + 1))
     }
 
-    fn get_package_name(&self) -> &[u8] {
-        self.package_name.as_bytes()
+    fn get_package_name(&self) -> &'static str {
+        self.package_name
     }
 
     unsafe fn get_context_switch_reason(&self) -> syscall::ContextSwitchReason {
@@ -754,6 +765,18 @@ impl<S: SyscallInterface> ProcessType for Process<'a, S> {
             self.current_stack_pointer.set(stack_pointer as *const u8);
             self.debug_set_max_stack_depth();
         });
+    }
+
+    fn debug_syscall_count(&self) -> usize {
+        self.debug.map_or(0, |debug| debug.syscall_count)
+    }
+
+    fn debug_dropped_callback_count(&self) -> usize {
+        self.debug.map_or(0, |debug| debug.dropped_callback_count)
+    }
+
+    fn debug_restart_count(&self) -> usize {
+        self.debug.map_or(0, |debug| debug.restart_count)
     }
 
     unsafe fn fault_str(&self, writer: &mut Write) {
