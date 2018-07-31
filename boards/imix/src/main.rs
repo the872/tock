@@ -11,6 +11,7 @@
 #![deny(missing_docs)]
 
 extern crate capsules;
+extern crate components as comp;
 #[allow(unused_imports)]
 #[macro_use(debug, debug_gpio, static_init)]
 extern crate kernel;
@@ -40,7 +41,7 @@ use components::crc::CrcComponent;
 use components::fxos8700::NineDofComponent;
 use components::gpio::GpioComponent;
 use components::isl29035::AmbientLightComponent;
-use components::led::LedComponent;
+use comp::led::LedComponent;
 use components::nonvolatile_storage::NonvolatileStorageComponent;
 use components::nrf51822::Nrf51822Component;
 use components::radio::RadioComponent;
