@@ -211,15 +211,13 @@ impl<U: UART> Driver for Console<'a, U> {
                 .enter(appid, |app, _| {
                     app.write_buffer = slice;
                     ReturnCode::SUCCESS
-                })
-                .unwrap_or_else(|err| err.into()),
+                }).unwrap_or_else(|err| err.into()),
             2 => self
                 .apps
                 .enter(appid, |app, _| {
                     app.read_buffer = slice;
                     ReturnCode::SUCCESS
-                })
-                .unwrap_or_else(|err| err.into()),
+                }).unwrap_or_else(|err| err.into()),
             _ => ReturnCode::ENOSUPPORT,
         }
     }
