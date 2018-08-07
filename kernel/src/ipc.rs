@@ -75,12 +75,9 @@ impl IPC {
                                         callback.schedule(otherapp.idx() + 1, 0, 0);
                                     }
                                 }
-                            })
-                            .unwrap_or(());
-                    })
-                    .unwrap_or(());
-            })
-            .unwrap_or(());
+                            }).unwrap_or(());
+                    }).unwrap_or(());
+            }).unwrap_or(());
     }
 }
 
@@ -107,8 +104,7 @@ impl Driver for IPC {
                 .enter(app_id, |data, _| {
                     data.callback = callback;
                     ReturnCode::SUCCESS
-                })
-                .unwrap_or(ReturnCode::EBUSY),
+                }).unwrap_or(ReturnCode::EBUSY),
 
             // subscribe(>=1)
             //
@@ -125,8 +121,7 @@ impl Driver for IPC {
                         .enter(app_id, |data, _| {
                             data.client_callbacks[svc_id - 1] = callback;
                             ReturnCode::SUCCESS
-                        })
-                        .unwrap_or(ReturnCode::EBUSY)
+                        }).unwrap_or(ReturnCode::EBUSY)
                 }
             }
         }
@@ -215,9 +210,7 @@ impl Driver for IPC {
                     .map(|smem| {
                         *smem = slice;
                         ReturnCode::SUCCESS
-                    })
-                    .unwrap_or(ReturnCode::EINVAL) /* Target process does not exist */
-            })
-            .unwrap_or(ReturnCode::EBUSY);
+                    }).unwrap_or(ReturnCode::EINVAL) /* Target process does not exist */
+            }).unwrap_or(ReturnCode::EBUSY);
     }
 }
