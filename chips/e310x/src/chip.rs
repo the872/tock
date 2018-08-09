@@ -89,7 +89,8 @@ impl kernel::Chip for E310x {
 
     fn sleep(&self) {
         unsafe {
-            riscvimac::support::wfi();
+            // riscvimac::support::wfi();
+            riscvimac::support::nop();
         }
     }
 

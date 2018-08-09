@@ -2,7 +2,7 @@ use core::cell::Cell;
 use core::ops::{Index, IndexMut};
 
 use kernel::common::StaticRef;
-use kernel::common::registers::{self, ReadOnly, ReadWrite, Field, FieldValue};
+use kernel::common::registers::{ReadOnly, ReadWrite, Field, FieldValue};
 use kernel::hil;
 use kernel::common::cells::OptionalCell;
 
@@ -162,6 +162,37 @@ impl GpioPin {
 
     pub fn set_client<C: hil::gpio::Client>(&self, client: &'static C) {
         self.client.set(client);
+    }
+
+    /// Configure this pin as IO Function 0. What that maps to is chip- and pin-
+    /// specific.
+    pub fn iof0(&self) {
+
+    	self.registers.out_xor.modify(self.clear);
+    	self.registers.iof_sel.modify(self.clear);
+    	self.registers.iof_en.modify(self.set);
+
+
+        // out_xor.out_xor().modify(|_, w| w.$pxi().bit(false));
+        // iof_sel.iof_sel().modify(|_, w| w.$pxi().bit(false));
+        // iof_en.iof_en().modify(|_, w| w.$pxi().bit(true));
+
+    }
+
+
+    /// Configure this pin as IO Function 1. What that maps to is chip- and pin-
+    /// specific.
+    pub fn iof1(&self) {
+
+    	self.registers.out_xor.modify(self.clear);
+    	self.registers.iof_sel.modify(self.set);
+    	self.registers.iof_en.modify(self.set);
+
+
+        // out_xor.out_xor().modify(|_, w| w.$pxi().bit(false));
+        // iof_sel.iof_sel().modify(|_, w| w.$pxi().bit(true));
+        // iof_en.iof_en().modify(|_, w| w.$pxi().bit(true));
+
     }
 }
 

@@ -35,7 +35,7 @@ const FAULT_RESPONSE: kernel::procs::FaultResponse = kernel::procs::FaultRespons
 
 // RAM to be shared by all application processes.
 #[link_section = ".app_memory"]
-static mut APP_MEMORY: [u8; 49152] = [0; 49152];
+static mut APP_MEMORY: [u8; 8192] = [0; 8192];
 
 // Actual memory for holding the active process structures.
 static mut PROCESSES: [Option<&'static kernel::procs::Process<'static>>; NUM_PROCS] = [
@@ -470,7 +470,6 @@ pub unsafe fn reset_handler() {
     hil::gpio::Pin::make_output(&e310x::gpio::PORT[21]);
     hil::gpio::Pin::clear(&e310x::gpio::PORT[21]);
 
-loop{}
 
     // // CRC
     // let crc = static_init!(
@@ -533,6 +532,8 @@ loop{}
     // // test_take_map_cell::test_take_map_cell();
 
     // debug!("Initialization complete. Entering main loop");
+
+    e310x::uart::UART0.initialize_gpio_pins(&e310x::gpio::PORT[17], &e310x::gpio::PORT[16]);
 
     extern "C" {
         /// Beginning of the ROM region containing app images.

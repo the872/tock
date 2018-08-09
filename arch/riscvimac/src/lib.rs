@@ -73,46 +73,6 @@ _start:
   .cfi_endproc
 "#);
 
-
-// /// Rust entry point (_start_rust)
-// ///
-// /// Zeros bss section, initializes data section and calls main. This function
-// /// never returns.
-// #[naked]
-// #[link_section = ".init.rust"]
-// #[export_name = "_start_rust"]
-// pub extern "C" fn start_rust() -> ! {
-//     unsafe {
-//         r0::zero_bss(&mut _sbss, &mut _ebss);
-//         r0::init_data(&mut _sdata, &mut _edata, &_sidata);
-//     }
-
-//     // TODO: Enable FPU when available
-
-//     // Set mtvec to _start_trap
-//     #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
-//     unsafe {
-//         //mtvec::write(_start_trap as usize, mtvec::TrapMode::Direct);
-//         asm!("csrrw zero, 0x305, $0"
-//              :
-//              : "r"(&_start_trap)
-//              :
-//              : "volatile");
-//     }
-
-//     // Neither `argc` or `argv` make sense in bare metal context so we
-//     // just stub them
-//     unsafe {
-//         main();
-//     }
-
-//     // If `main` returns, then we go into "reactive" mode and simply attend
-//     // interrupts as they occur.
-//     loop {
-//         asm::wfi();
-//     }
-// }
-
 /// Setup memory for the kernel.
 ///
 /// This moves the data segment from flash to RAM and zeros out the BSS section.
