@@ -170,16 +170,9 @@ impl hil::gpio::PinCtl for GpioPin {
         match mode {
             hil::gpio::InputMode::PullUp => {
             	self.registers.pullup.modify(self.set);
-            	// self.registers.input_en.write(self.pin::SET);
-            	// self.registers.iof_en.write(self.pin::CLEAR);
-                // self.disable_pull_down();
-                // self.enable_pull_up();
             }
             hil::gpio::InputMode::PullDown => {
             	self.registers.pullup.modify(self.clear);
-                // self.disable_pull_up();
-                // self.enable_pull_down();
-
             }
             hil::gpio::InputMode::PullNone => {
                 self.registers.pullup.modify(self.clear);
@@ -198,44 +191,16 @@ impl hil::gpio::Pin for GpioPin {
     	self.registers.out_xor.modify(self.clear);
     	self.registers.output_en.modify(self.set);
     	self.registers.iof_en.modify(self.clear);
-
-
-    	// self.registers.drive.set(0);
-    	// self.registers.out_xor.set(0);
-    	// self.registers.output_en.set(1<<19);
-    	// self.registers.iof_en.set(0);
-
-    	// drive.drive().modify(|_, w| w.$pxi().bit(false));
-     //                    out_xor.out_xor().modify(|_, w| w.$pxi().bit(false));
-     //                    output_en.output_en().modify(|_, w| w.$pxi().bit(true));
-     //                    iof_en.iof_en().modify(|_, w| w.$pxi().bit(false));
-
-
-
-     //    self.enable();
-     //    GPIOPin::enable_output(self);
-     //    self.disable_schmidtt_trigger();
     }
 
     fn make_input(&self) {
     	self.registers.pullup.modify(self.clear);
     	self.registers.input_en.modify(self.set);
     	self.registers.iof_en.modify(self.clear);
-
-
-    	// pullup.pullup().modify(|_, w| w.$pxi().bit(false));
-    	// input_en.input_en().modify(|_, w| w.$pxi().bit(true));
-    	// iof_en.iof_en().modify(|_, w| w.$pxi().bit(false));
-
-
-     //    self.enable();
-     //    GPIOPin::disable_output(self);
-     //    self.enable_schmidtt_trigger();
     }
 
     fn read(&self) -> bool {
     	self.registers.value.is_set(self.pin)
-        // GPIOPin::read(self)
     }
 
     fn toggle(&self) {
@@ -245,42 +210,21 @@ impl hil::gpio::Pin for GpioPin {
     	} else {
     		self.registers.port.modify_no_read(current_outputs, self.set);
     	}
-        // GPIOPin::toggle(self);
     }
 
     fn set(&self) {
     	self.registers.port.modify(self.set);
-
-
-    	// self.registers.port.set(1<<19);
-
-        // GPIOPin::set(self);
     }
 
     fn clear(&self) {
     	self.registers.port.modify(self.clear);
-
-
-    	// self.registers.port.set(0);
-
-
-        // GPIOPin::clear(self);
     }
 
     fn enable_interrupt(&self, client_data: usize, mode: hil::gpio::InterruptMode) {
-        // let mode_bits = match mode {
-        //     hil::gpio::InterruptMode::EitherEdge => 0b00,
-        //     hil::gpio::InterruptMode::RisingEdge => 0b01,
-        //     hil::gpio::InterruptMode::FallingEdge => 0b10,
-        // };
-        // self.client_data.set(client_data);
-        // GPIOPin::set_interrupt_mode(self, mode_bits);
-        // GPIOPin::enable_interrupt(self);
+        unimplemented!();
     }
 
     fn disable_interrupt(&self) {
-        // GPIOPin::disable_interrupt(self);
+        unimplemented!();
     }
 }
-
-
