@@ -43,6 +43,7 @@ use kernel::hil::uart::{self, UART};
 #[no_mangle]
 #[panic_implementation]
 pub unsafe extern "C" fn panic_fmt(pi: &PanicInfo) -> ! {
+    loop{}
     // // turn off the non panic leds, just in case
     // let led_green = &sam4l::gpio::PA[14];
     // led_green.enable_output();

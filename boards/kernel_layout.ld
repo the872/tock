@@ -75,6 +75,18 @@ SECTIONS
         KEEP(*(.vectors .vectors.*))
         KEEP(*(.irqs))
 
+        /* RISC-V
+         * There is no vector table in RISCV, so .vectors and .irqs will be
+         * empty. Instead, the _start function needs to be first in the binary
+         * for it to correctly be executed. We also need to include the trap
+         * handler assembly function.
+         *
+         * These are expected to just be empty on other platforms so they
+         * shouldn't have any effect.
+         */
+        KEEP(*(.riscv.start));
+        KEEP(*(.riscv.trap));
+
         /* .text and .rodata hold most program code and immutable constants */
         /* .gnu.linkonce hold C++ elements with vague linkage
                 https://gcc.gnu.org/onlinedocs/gcc/Vague-Linkage.html */
@@ -278,5 +290,5 @@ SECTIONS
     } > ram
 }
 
-ASSERT((_etext-_stext) + (_erelocate-_srelocate) < LENGTH(rom), "
+ASSERT((_etext - _stext) + (_erelocate - _srelocate) < LENGTH(rom), "
 Text plus relocations exceeds the available ROM space.");

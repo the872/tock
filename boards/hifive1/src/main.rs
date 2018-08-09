@@ -49,9 +49,9 @@ pub static mut STACK_MEMORY: [u8; 0x1000] = [0; 0x1000];
 
 /// A structure representing this platform that holds references to all
 /// capsules for this platform.
-struct Hail {
+struct HiFive1 {
     // console: &'static capsules::console::Console<'static, UartDevice<'static>>,
-    gpio: &'static capsules::gpio::GPIO<'static, e310x::gpio::GPIOPin>,
+    gpio: &'static capsules::gpio::GPIO<'static, e310x::gpio::GpioPin>,
     // alarm: &'static capsules::alarm::AlarmDriver<
     //     'static,
     //     VirtualMuxAlarm<'static, sam4l::ast::Ast<'static>>,
@@ -66,7 +66,7 @@ struct Hail {
     //     sam4l::usart::USART,
     // >,
     // adc: &'static capsules::adc::Adc<'static, sam4l::adc::Adc>,
-    led: &'static capsules::led::LED<'static, e310x::gpio::GPIOPin>,
+    led: &'static capsules::led::LED<'static, e310x::gpio::GpioPin>,
     // button: &'static capsules::button::Button<'static, sam4l::gpio::GPIOPin>,
     // rng: &'static capsules::rng::SimpleRng<'static, sam4l::trng::Trng<'static>>,
     // ipc: kernel::ipc::IPC,
@@ -173,6 +173,8 @@ pub unsafe fn reset_handler() {
     riscvimac::init_memory();
     riscvimac::configure_trap_handler();
 
+
+
     // sam4l::pm::PM.setup_system_clock(sam4l::pm::SystemClockSource::PllExternalOscillatorAt48MHz {
     //     frequency: sam4l::pm::OscillatorFrequency::Frequency16MHz,
     //     startup_mode: sam4l::pm::OscillatorStartup::SlowStart,
@@ -192,7 +194,9 @@ pub unsafe fn reset_handler() {
     //     Some(&sam4l::gpio::PA[14]),
     // );
 
-    let mut chip = e310x::chip::E310X::new();
+    let mut chip = e310x::chip::E310x::new();
+
+
 
     // // Initialize USART0 for Uart
     // e310x::usart::USART0.set_mode(sam4l::usart::UsartMode::Uart);
@@ -362,29 +366,31 @@ pub unsafe fn reset_handler() {
 
     // LEDs
     let led_pins = static_init!(
-        [(&'static e310x::gpio::GPIOPin, capsules::led::ActivationMode); 3],
+        [(&'static e310x::gpio::GpioPin, capsules::led::ActivationMode); 3],
         [
             (
                 // Red
-                &e310x::gpio::PA[13],
+                &e310x::gpio::PORT[22],
                 capsules::led::ActivationMode::ActiveLow
             ),
             (
                 // Green
-                &e310x::gpio::PA[15],
+                &e310x::gpio::PORT[19],
                 capsules::led::ActivationMode::ActiveLow
             ),
             (
                 // Blue
-                &e310x::gpio::PA[14],
+                &e310x::gpio::PORT[21],
                 capsules::led::ActivationMode::ActiveLow
             ),
         ]
     );
     let led = static_init!(
-        capsules::led::LED<'static, sam4l::gpio::GPIOPin>,
+        capsules::led::LED<'static, e310x::gpio::GpioPin>,
         capsules::led::LED::new(led_pins)
     );
+
+
 
     // // BUTTONs
     // let button_pins = static_init!(
@@ -435,21 +441,36 @@ pub unsafe fn reset_handler() {
 
     // set GPIO driver controlling remaining GPIO pins
     let gpio_pins = static_init!(
-        [&'static e310x::gpio::GPIOPin; 4],
+        [&'static e310x::gpio::GpioPin; 3],
         [
-            &e310x::gpio::PB[14],
-            &e310x::gpio::PB[15],
-            &e310x::gpio::PB[11],
-            &e310x::gpio::PB[12],
+            &e310x::gpio::PORT[9],
+            &e310x::gpio::PORT[10],
+            &e310x::gpio::PORT[11],
         ]
     );
     let gpio = static_init!(
-        capsules::gpio::GPIO<'static, e310x::gpio::GPIOPin>,
+        capsules::gpio::GPIO<'static, e310x::gpio::GpioPin>,
         capsules::gpio::GPIO::new(gpio_pins)
     );
     for pin in gpio_pins.iter() {
         pin.set_client(gpio);
     }
+
+
+
+    // hil::gpio::Pin::make_output(&e310x::gpio::PORT[22]);
+    // hil::gpio::Pin::clear(&e310x::gpio::PORT[22]);
+
+
+
+    hil::gpio::Pin::make_output(&e310x::gpio::PORT[19]);
+    hil::gpio::Pin::set(&e310x::gpio::PORT[19]);
+
+
+    hil::gpio::Pin::make_output(&e310x::gpio::PORT[21]);
+    hil::gpio::Pin::clear(&e310x::gpio::PORT[21]);
+
+loop{}
 
     // // CRC
     // let crc = static_init!(
@@ -464,7 +485,7 @@ pub unsafe fn reset_handler() {
     //     capsules::dac::Dac::new(&mut sam4l::dac::DAC)
     // );
 
-    let hail = Hail {
+    let hifive1 = HiFive1 {
         // console: console,
         gpio: gpio,
         // alarm: alarm,
@@ -527,5 +548,5 @@ pub unsafe fn reset_handler() {
         &mut PROCESSES,
         FAULT_RESPONSE,
     );
-    board_kernel.kernel_loop(&hail, &mut chip, None);
+    board_kernel.kernel_loop(&hifive1, &mut chip, None);
 }

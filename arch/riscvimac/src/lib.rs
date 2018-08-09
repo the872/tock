@@ -1,12 +1,15 @@
 #![crate_name = "riscvimac"]
 #![crate_type = "rlib"]
-#![feature(asm, const_fn, lang_items)]
+#![feature(asm, const_fn, lang_items, global_asm)]
 #![no_std]
 
 #[macro_use(register_bitfields, register_bitmasks)]
 extern crate kernel;
 
+pub mod support;
+
 extern "C" {
+	// External function defined by the board main.rs.
     fn reset_handler();
 
     // Where the end of the stack region is (and hence where the stack should
@@ -36,7 +39,7 @@ extern "C" {
 /// pointer. Then it calls _start_rust.
 #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
 global_asm!(r#"
-.section .init
+.section .riscv.start
 .globl _start
 _start:
   .cfi_startproc
@@ -71,44 +74,44 @@ _start:
 "#);
 
 
-/// Rust entry point (_start_rust)
-///
-/// Zeros bss section, initializes data section and calls main. This function
-/// never returns.
-#[naked]
-#[link_section = ".init.rust"]
-#[export_name = "_start_rust"]
-pub extern "C" fn start_rust() -> ! {
-    unsafe {
-        r0::zero_bss(&mut _sbss, &mut _ebss);
-        r0::init_data(&mut _sdata, &mut _edata, &_sidata);
-    }
+// /// Rust entry point (_start_rust)
+// ///
+// /// Zeros bss section, initializes data section and calls main. This function
+// /// never returns.
+// #[naked]
+// #[link_section = ".init.rust"]
+// #[export_name = "_start_rust"]
+// pub extern "C" fn start_rust() -> ! {
+//     unsafe {
+//         r0::zero_bss(&mut _sbss, &mut _ebss);
+//         r0::init_data(&mut _sdata, &mut _edata, &_sidata);
+//     }
 
-    // TODO: Enable FPU when available
+//     // TODO: Enable FPU when available
 
-    // Set mtvec to _start_trap
-    #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
-    unsafe {
-        //mtvec::write(_start_trap as usize, mtvec::TrapMode::Direct);
-        asm!("csrrw zero, 0x305, $0"
-             :
-             : "r"(&_start_trap)
-             :
-             : "volatile");
-    }
+//     // Set mtvec to _start_trap
+//     #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
+//     unsafe {
+//         //mtvec::write(_start_trap as usize, mtvec::TrapMode::Direct);
+//         asm!("csrrw zero, 0x305, $0"
+//              :
+//              : "r"(&_start_trap)
+//              :
+//              : "volatile");
+//     }
 
-    // Neither `argc` or `argv` make sense in bare metal context so we
-    // just stub them
-    unsafe {
-        main();
-    }
+//     // Neither `argc` or `argv` make sense in bare metal context so we
+//     // just stub them
+//     unsafe {
+//         main();
+//     }
 
-    // If `main` returns, then we go into "reactive" mode and simply attend
-    // interrupts as they occur.
-    loop {
-        asm::wfi();
-    }
-}
+//     // If `main` returns, then we go into "reactive" mode and simply attend
+//     // interrupts as they occur.
+//     loop {
+//         asm::wfi();
+//     }
+// }
 
 /// Setup memory for the kernel.
 ///
@@ -149,8 +152,8 @@ pub unsafe fn configure_trap_handler() {
 		// CSR.
 		//
 		// The CSR we care about is 0x305 (mtvec, 'Machine trap-handler base
-		// address.'). We do not care about its old value, so we store that to
-		// the fixed 'zero' register, and then we set the CSR with the address
+		// address.'). We do not care about its old value, so we 'store' that to
+		// the fixed `zero` register, and then we set the CSR with the address
 		// of the _start_trap function.
 		csrrw zero, 0x305, $0
 		"
@@ -160,6 +163,14 @@ pub unsafe fn configure_trap_handler() {
 	     : "volatile");
 }
 
+/// Need this defined.
+///
+/// Need to make this real to actually support tock.
+#[no_mangle]
+pub unsafe extern "C" fn switch_to_user(user_stack: *const u8, process_got: *const u8) -> *mut u8 {
+    user_stack as *mut u8
+}
+
 
 /// Trap entry point (_start_trap)
 ///
@@ -167,7 +178,7 @@ pub unsafe fn configure_trap_handler() {
 /// restores caller saved registers and then returns.
 #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
 global_asm!(r#"
-  .section .trap
+  .section .riscv.trap
   .align 4
   .global _start_trap
 
@@ -221,24 +232,26 @@ _start_trap:
 /// if it's an interrupt or an exception. The result is converted to an element
 /// of the Interrupt or Exception enum and passed to handle_interrupt or
 /// handle_exception.
-#[link_section = ".trap.rust"]
+// #[link_section = ".trap.rust"]
 #[export_name = "_start_trap_rust"]
 pub extern "C" fn start_trap_rust() {
-    // dispatch trap to handler
-    trap_handler(mcause::read().cause());
-    // mstatus, remain in M-mode after mret
-    unsafe {
-        mstatus::set_mpp(mstatus::MPP::Machine);
-    }
+    // // dispatch trap to handler
+    // trap_handler(mcause::read().cause());
+    // // mstatus, remain in M-mode after mret
+    // unsafe {
+    //     mstatus::set_mpp(mstatus::MPP::Machine);
+    // }
 }
 
 
-/// Default Trap Handler
-#[no_mangle]
-#[linkage = "weak"]
-pub fn trap_handler(_: mcause::Trap) {}
+// /// Default Trap Handler
+// #[no_mangle]
+// #[linkage = "weak"]
+// pub fn trap_handler(_: mcause::Trap) {}
 
-// Make sure there is an abort when linking
+// Make sure there is an abort when linking.
+//
+// I don't know why we need this, or why cortex-m doesn't seem to have it.
 #[cfg(any(target_arch = "riscv32", target_arch = "riscv64"))]
 global_asm!(r#"
 .section .init
