@@ -169,7 +169,9 @@ impl Platform for HiFive1 {
 /// execution begins here.
 #[no_mangle]
 pub unsafe fn reset_handler() {
-    e310::init();
+    // Basic setup of the platform.
+    riscvimac::init_memory();
+    riscvimac::configure_trap_handler();
 
     // sam4l::pm::PM.setup_system_clock(sam4l::pm::SystemClockSource::PllExternalOscillatorAt48MHz {
     //     frequency: sam4l::pm::OscillatorFrequency::Frequency16MHz,

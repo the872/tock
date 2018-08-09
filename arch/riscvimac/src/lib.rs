@@ -7,22 +7,25 @@
 extern crate kernel;
 
 extern "C" {
-    // NOTE `rustc` forces this signature on us. See `src/lang_items.rs`
-    fn main() -> isize;
+    fn reset_handler();
 
-    // Boundaries of the .bss section
-    static mut _ebss: u32;
-    static mut _sbss: u32;
-
-    // Boundaries of the .data section
-    static mut _edata: u32;
-    static mut _sdata: u32;
-
-    // Initial values of the .data section (stored in Flash)
-    static _sidata: u32;
+    // Where the end of the stack region is (and hence where the stack should
+    // start).
+    static _estack: u32;
 
     // Address of _start_trap
     static _start_trap: u32;
+
+    // Boundaries of the .bss section
+    static mut _szero: u32;
+    static mut _ezero: u32;
+
+    // Where the .data section is stored in flash.
+    static mut _etext: u32;
+
+    // Boundaries of the .data section
+    static mut _srelocate: u32;
+    static mut _erelocate: u32;
 }
 
 
@@ -39,18 +42,30 @@ _start:
   .cfi_startproc
   .cfi_undefined ra
 
-  // .option push
-  // .option norelax
+  // Set the global pointer register using the variable defined in the linker
+  // script. This register is only set once. The global pointer is a method
+  // for sharing state between the linker and the CPU so that the linker can
+  // emit code with offsets that are relative to the gp register, and the CPU
+  // can successfully execute them.
+  //
+  // https://gnu-mcu-eclipse.github.io/arch/riscv/programmer/#the-gp-global-pointer-register
+  // https://groups.google.com/a/groups.riscv.org/forum/#!msg/sw-dev/60IdaZj27dY/5MydPLnHAQAJ
+  // https://www.sifive.com/blog/2017/08/28/all-aboard-part-3-linker-relaxation-in-riscv-toolchain/
+  //
   lui gp, %hi(__global_pointer$)
   addi gp, gp, %lo(__global_pointer$)
-  // .option pop
 
-  lui sp, %hi(_stack_start)
-  addi sp, sp, %lo(_stack_start)
+  // Initialize the stack pointer register. This comes directly from the linker
+  // script.
+  lui sp, %hi(_estack)
+  addi sp, sp, %lo(_estack)
 
+  // Set s0 (the frame pointer) to the start of the stack.
   add s0, sp, zero
 
-  jal zero, _start_rust
+  // With that initial setup out of the way, we now branch to the main code,
+  // likely defined in a board's main.rs.
+  jal zero, reset_handler
 
   .cfi_endproc
 "#);
@@ -93,6 +108,56 @@ pub extern "C" fn start_rust() -> ! {
     loop {
         asm::wfi();
     }
+}
+
+/// Setup memory for the kernel.
+///
+/// This moves the data segment from flash to RAM and zeros out the BSS section.
+pub unsafe fn init_memory() {
+    // Relocate data segment.
+    // Assumes data starts right after text segment as specified by the linker
+    // file.
+    let mut pdest = &mut _srelocate as *mut u32;
+    let pend = &mut _erelocate as *mut u32;
+    let mut psrc = &_etext as *const u32;
+
+    if psrc != pdest {
+        while (pdest as *const u32) < pend {
+            *pdest = *psrc;
+            pdest = pdest.offset(1);
+            psrc = psrc.offset(1);
+        }
+    }
+
+    // Clear the zero segment (BSS)
+    let pzero = &_ezero as *const u32;
+    pdest = &mut _szero as *mut u32;
+
+    while (pdest as *const u32) < pzero {
+        *pdest = 0;
+        pdest = pdest.offset(1);
+    }
+}
+
+/// Tell the MCU what address the trap handler is located at.
+///
+/// The trap handler is called on exceptions and for interrupts.
+pub unsafe fn configure_trap_handler() {
+	asm!("
+		// The csrrw instruction reads a Control and Status Register (CSR)
+		// into a integer register, while atomically updating the value of the
+		// CSR.
+		//
+		// The CSR we care about is 0x305 (mtvec, 'Machine trap-handler base
+		// address.'). We do not care about its old value, so we store that to
+		// the fixed 'zero' register, and then we set the CSR with the address
+		// of the _start_trap function.
+		csrrw zero, 0x305, $0
+		"
+	     :
+	     : "r"(&_start_trap)
+	     :
+	     : "volatile");
 }
 
 
