@@ -110,7 +110,7 @@ pub unsafe fn reset_handler() {
 
     // Configure kernel debug gpios as early as possible
     kernel::debug::assign_gpios(
-        Some(&e310x::gpio::PORT[22]),
+        Some(&e310x::gpio::PORT[22]), // Red
         None,
         None,
     );
@@ -129,6 +129,7 @@ pub unsafe fn reset_handler() {
         )
     );
     hil::uart::UART::set_client(&e310x::uart::UART0, uart_mux);
+    uart_mux.initialize();
 
     // // Create a UartDevice for the console.
     // let console_uart = static_init!(UartDevice, UartDevice::new(uart_mux, true));
@@ -237,7 +238,7 @@ pub unsafe fn reset_handler() {
     hil::gpio::Pin::set(&e310x::gpio::PORT[19]);
 
     hil::gpio::Pin::make_output(&e310x::gpio::PORT[21]);
-    hil::gpio::Pin::clear(&e310x::gpio::PORT[21]);
+    hil::gpio::Pin::set(&e310x::gpio::PORT[21]);
 
     let hifive1 = HiFive1 {
         // console: console,

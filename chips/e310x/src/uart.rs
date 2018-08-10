@@ -94,11 +94,12 @@ impl Uart {
     }
 
     fn set_baud_rate(&self, baud_rate: u32) {
-        let regs = &*self.registers;
+        let regs = self.registers;
 
         // Assume that the clock is running at 384 MHz.
         // let clock_speed = 384_000_000 as u32;
-        let clock_speed = 72_000_000 as u32;
+
+        let clock_speed = 18_000_000 as u32;
 
         //            f_clk
         // f_baud = ---------
@@ -228,7 +229,6 @@ impl hil::uart::UART for Uart {
         self.enable_tx_interrupt();
     }
 
-    // Blocking implementation
     fn receive(&self, rx_buffer: &'static mut [u8], rx_len: usize) {
     }
 

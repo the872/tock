@@ -28,12 +28,6 @@ impl kernel::Chip for E310x {
     fn service_pending_interrupts(&mut self) {
         unsafe {
             while let Some(interrupt) = plic::next_pending() {
-                // debug_gpio!(0, toggle);
-
-                if interrupt == 1 {
-                    debug_gpio!(0, toggle);
-                }
-
                 match interrupt {
                     interrupts::WATCHDOG => { /* Not sure why this interrupt is happening. */}
                     interrupts::UART0 => uart::UART0.handle_interrupt(),
