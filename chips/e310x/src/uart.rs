@@ -121,7 +121,6 @@ impl Uart {
 
     pub fn handle_interrupt(&self) {
         let regs = self.registers;
-        // debug_gpio!(0, toggle);
 
         // Get a copy so we can check each interrupt flag in the register.
         let pending_interrupts = regs.ip.extract();
@@ -143,6 +142,7 @@ impl Uart {
                     });
                 });
             } else {
+
                 // More to send. Fill the buffer until it is full.
                 self.buffer.map(|buffer| {
                     for i in self.index.get()..self.len.get() {
@@ -191,6 +191,9 @@ impl hil::uart::UART for Uart {
             return;
         }
 
+        // Enable the interrupt so we know when we can keep writing.
+        self.enable_tx_interrupt();
+
         // Fill the TX buffer until it reports full.
         for i in 0..tx_len {
             // Write the byte from the array to the tx register.
@@ -214,9 +217,6 @@ impl hil::uart::UART for Uart {
             hil::uart::StopBits::Two => txctrl::nstop::TwoStopBits,
         };
         regs.txctrl.write(txctrl::txen::SET + stop_bits + txctrl::txcnt.val(1));
-
-        // Enable and wait for the TX interrupt.
-        self.enable_tx_interrupt();
     }
 
     fn receive(&self, _rx_buffer: &'static mut [u8], _rx_len: usize) {
