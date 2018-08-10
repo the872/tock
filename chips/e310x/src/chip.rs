@@ -7,6 +7,7 @@ use kernel;
 // use nrf5x::peripheral_interrupts;
 // use radio;
 // use uart;
+use gpio;
 use interrupts;
 use uart;
 
@@ -42,6 +43,7 @@ impl kernel::Chip for E310x {
                 match interrupt {
                     interrupts::WATCHDOG => { /* Not sure why this interrupt is happening. */}
                     interrupts::UART0 => uart::UART0.handle_interrupt(),
+                    index @ interrupts::GPIO0..interrupts::GPIO31 => gpio::PORT[index as usize].handle_interrupt(),
                     // peripheral_interrupts::GPIOTE => nrf5x::gpio::PORT.handle_interrupt(),
                     // peripheral_interrupts::RADIO => radio::RADIO.handle_interrupt(),
                     // peripheral_interrupts::RNG => nrf5x::trng::TRNG.handle_interrupt(),

@@ -167,32 +167,25 @@ impl GpioPin {
     /// Configure this pin as IO Function 0. What that maps to is chip- and pin-
     /// specific.
     pub fn iof0(&self) {
-
     	self.registers.out_xor.modify(self.clear);
     	self.registers.iof_sel.modify(self.clear);
     	self.registers.iof_en.modify(self.set);
-
-
-        // out_xor.out_xor().modify(|_, w| w.$pxi().bit(false));
-        // iof_sel.iof_sel().modify(|_, w| w.$pxi().bit(false));
-        // iof_en.iof_en().modify(|_, w| w.$pxi().bit(true));
-
     }
-
 
     /// Configure this pin as IO Function 1. What that maps to is chip- and pin-
     /// specific.
     pub fn iof1(&self) {
-
     	self.registers.out_xor.modify(self.clear);
     	self.registers.iof_sel.modify(self.set);
     	self.registers.iof_en.modify(self.set);
+    }
 
-
-        // out_xor.out_xor().modify(|_, w| w.$pxi().bit(false));
-        // iof_sel.iof_sel().modify(|_, w| w.$pxi().bit(true));
-        // iof_en.iof_en().modify(|_, w| w.$pxi().bit(true));
-
+    /// There are separate interrupts in PLIC for each pin, so the interrupt
+    /// handler only needs to exist on each pin.
+    pub fn handle_interrupt(&self) {
+        self.client.map(|client| {
+            client.fired(self.client_data.get());
+        });
     }
 }
 
@@ -252,10 +245,28 @@ impl hil::gpio::Pin for GpioPin {
     }
 
     fn enable_interrupt(&self, client_data: usize, mode: hil::gpio::InterruptMode) {
-        unimplemented!();
+        self.registers.pullup.modify(self.clear);
+        self.registers.input_en.modify(self.set);
+        self.registers.iof_en.modify(self.clear);
+
+        self.client_data.set(client_data);
+
+        match mode {
+            hil::gpio::InterruptMode::RisingEdge => {
+                self.registers.rise_ie.modify(self.set);
+            }
+            hil::gpio::InterruptMode::FallingEdge => {
+                self.registers.fall_ie.modify(self.set);
+            }
+            hil::gpio::InterruptMode::EitherEdge => {
+                self.registers.rise_ie.modify(self.set);
+                self.registers.fall_ie.modify(self.set);
+            }
+        }
     }
 
     fn disable_interrupt(&self) {
-        unimplemented!();
+        self.registers.rise_ie.modify(self.clear);
+        self.registers.fall_ie.modify(self.clear);
     }
 }
