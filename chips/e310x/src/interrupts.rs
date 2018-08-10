@@ -1,5 +1,7 @@
 //! Named interrupts for the E310X chip.
 
+#![allow(dead_code)]
+
 pub const WATCHDOG: u32 = 0;
 pub const RTC: u32 = 1;
 pub const UART0: u32 = 2;

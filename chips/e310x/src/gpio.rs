@@ -167,17 +167,21 @@ impl GpioPin {
     /// Configure this pin as IO Function 0. What that maps to is chip- and pin-
     /// specific.
     pub fn iof0(&self) {
-    	self.registers.out_xor.modify(self.clear);
-    	self.registers.iof_sel.modify(self.clear);
-    	self.registers.iof_en.modify(self.set);
+        let regs = self.registers;
+
+    	regs.out_xor.modify(self.clear);
+    	regs.iof_sel.modify(self.clear);
+    	regs.iof_en.modify(self.set);
     }
 
     /// Configure this pin as IO Function 1. What that maps to is chip- and pin-
     /// specific.
     pub fn iof1(&self) {
-    	self.registers.out_xor.modify(self.clear);
-    	self.registers.iof_sel.modify(self.set);
-    	self.registers.iof_en.modify(self.set);
+        let regs = self.registers;
+
+    	regs.out_xor.modify(self.clear);
+    	regs.iof_sel.modify(self.set);
+    	regs.iof_en.modify(self.set);
     }
 
     /// There are separate interrupts in PLIC for each pin, so the interrupt
@@ -191,15 +195,17 @@ impl GpioPin {
 
 impl hil::gpio::PinCtl for GpioPin {
     fn set_input_mode(&self, mode: hil::gpio::InputMode) {
+        let regs = self.registers;
+
         match mode {
             hil::gpio::InputMode::PullUp => {
-            	self.registers.pullup.modify(self.set);
+            	regs.pullup.modify(self.set);
             }
             hil::gpio::InputMode::PullDown => {
-            	self.registers.pullup.modify(self.clear);
+            	regs.pullup.modify(self.clear);
             }
             hil::gpio::InputMode::PullNone => {
-                self.registers.pullup.modify(self.clear);
+                regs.pullup.modify(self.clear);
             }
         }
     }
@@ -207,66 +213,83 @@ impl hil::gpio::PinCtl for GpioPin {
 
 impl hil::gpio::Pin for GpioPin {
     fn disable(&self) {
-        // nop maybe?
+        // NOP. There does not seem to be a way to "disable" a GPIO pin on this
+        // chip.
     }
 
     fn make_output(&self) {
-    	self.registers.drive.modify(self.clear);
-    	self.registers.out_xor.modify(self.clear);
-    	self.registers.output_en.modify(self.set);
-    	self.registers.iof_en.modify(self.clear);
+        let regs = self.registers;
+
+    	regs.drive.modify(self.clear);
+    	regs.out_xor.modify(self.clear);
+    	regs.output_en.modify(self.set);
+    	regs.iof_en.modify(self.clear);
     }
 
     fn make_input(&self) {
-    	self.registers.pullup.modify(self.clear);
-    	self.registers.input_en.modify(self.set);
-    	self.registers.iof_en.modify(self.clear);
+        let regs = self.registers;
+
+    	regs.pullup.modify(self.clear);
+    	regs.input_en.modify(self.set);
+    	regs.iof_en.modify(self.clear);
     }
 
     fn read(&self) -> bool {
-    	self.registers.value.is_set(self.pin)
+        let regs = self.registers;
+
+    	regs.value.is_set(self.pin)
     }
 
     fn toggle(&self) {
-    	let current_outputs = self.registers.port.extract();
+        let regs = self.registers;
+
+    	let current_outputs = regs.port.extract();
     	if current_outputs.is_set(self.pin) {
-    		self.registers.port.modify_no_read(current_outputs, self.clear);
+    		regs.port.modify_no_read(current_outputs, self.clear);
     	} else {
-    		self.registers.port.modify_no_read(current_outputs, self.set);
+    		regs.port.modify_no_read(current_outputs, self.set);
     	}
     }
 
     fn set(&self) {
-    	self.registers.port.modify(self.set);
+        let regs = self.registers;
+
+    	regs.port.modify(self.set);
     }
 
     fn clear(&self) {
-    	self.registers.port.modify(self.clear);
+        let regs = self.registers;
+
+    	regs.port.modify(self.clear);
     }
 
     fn enable_interrupt(&self, client_data: usize, mode: hil::gpio::InterruptMode) {
-        self.registers.pullup.modify(self.clear);
-        self.registers.input_en.modify(self.set);
-        self.registers.iof_en.modify(self.clear);
+        let regs = self.registers;
+
+        regs.pullup.modify(self.clear);
+        regs.input_en.modify(self.set);
+        regs.iof_en.modify(self.clear);
 
         self.client_data.set(client_data);
 
         match mode {
             hil::gpio::InterruptMode::RisingEdge => {
-                self.registers.rise_ie.modify(self.set);
+                regs.rise_ie.modify(self.set);
             }
             hil::gpio::InterruptMode::FallingEdge => {
-                self.registers.fall_ie.modify(self.set);
+                regs.fall_ie.modify(self.set);
             }
             hil::gpio::InterruptMode::EitherEdge => {
-                self.registers.rise_ie.modify(self.set);
-                self.registers.fall_ie.modify(self.set);
+                regs.rise_ie.modify(self.set);
+                regs.fall_ie.modify(self.set);
             }
         }
     }
 
     fn disable_interrupt(&self) {
-        self.registers.rise_ie.modify(self.clear);
-        self.registers.fall_ie.modify(self.clear);
+        let regs = self.registers;
+
+        regs.rise_ie.modify(self.clear);
+        regs.fall_ie.modify(self.clear);
     }
 }

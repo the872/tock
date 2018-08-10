@@ -13,12 +13,10 @@ extern crate kernel;
 extern crate riscvimac;
 extern crate e310x;
 
-use capsules::virtual_alarm::{MuxAlarm, VirtualMuxAlarm};
-use capsules::virtual_i2c::{I2CDevice, MuxI2C};
-use capsules::virtual_spi::{MuxSpiMaster, VirtualSpiMasterDevice};
+// use capsules::virtual_alarm::{MuxAlarm, VirtualMuxAlarm};
+// use capsules::virtual_i2c::{I2CDevice, MuxI2C};
 use capsules::virtual_uart::{UartDevice, UartMux};
 use kernel::hil;
-use kernel::hil::spi::SpiMaster;
 use kernel::Platform;
 
 pub mod io;

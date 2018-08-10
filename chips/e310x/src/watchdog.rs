@@ -1,7 +1,7 @@
 //! Watchdog
 
 use kernel::common::StaticRef;
-use kernel::common::registers::{self, ReadOnly, ReadWrite, WriteOnly};
+use kernel::common::registers::{ReadWrite, WriteOnly};
 
 pub static mut WATCHDOG: Watchdog = Watchdog::new();
 

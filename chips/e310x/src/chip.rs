@@ -44,10 +44,10 @@ impl kernel::Chip for E310x {
     }
 
     fn sleep(&self) {
-        unsafe {
+        // unsafe {
             // riscvimac::support::wfi();
             riscvimac::support::nop();
-        }
+        // }
     }
 
     unsafe fn atomic<F, R>(&self, f: F) -> R

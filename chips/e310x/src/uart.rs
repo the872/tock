@@ -109,28 +109,18 @@ impl Uart {
         regs.div.write(div::div.val(divisor));
     }
 
-    fn enable_rx_interrupt(&self) {
-        let regs = &*self.registers;
-        regs.ie.modify(interrupt::rxwm::SET);
-    }
-
     fn enable_tx_interrupt(&self) {
-        let regs = &*self.registers;
+        let regs = self.registers;
         regs.ie.modify(interrupt::txwm::SET);
     }
 
-    fn disable_rx_interrupt(&self) {
-        let regs = &*self.registers;
-        regs.ie.modify(interrupt::rxwm::CLEAR);
-    }
-
     fn disable_tx_interrupt(&self) {
-        let regs = &*self.registers;
+        let regs = self.registers;
         regs.ie.modify(interrupt::txwm::CLEAR);
     }
 
     pub fn handle_interrupt(&self) {
-        let regs = &*self.registers;
+        let regs = self.registers;
         // debug_gpio!(0, toggle);
 
         // Get a copy so we can check each interrupt flag in the register.
@@ -195,7 +185,7 @@ impl hil::uart::UART for Uart {
     }
 
     fn transmit(&self, tx_data: &'static mut [u8], tx_len: usize) {
-        let regs = &*self.registers;
+        let regs = self.registers;
 
         if tx_len == 0 {
             return;
@@ -229,7 +219,7 @@ impl hil::uart::UART for Uart {
         self.enable_tx_interrupt();
     }
 
-    fn receive(&self, rx_buffer: &'static mut [u8], rx_len: usize) {
+    fn receive(&self, _rx_buffer: &'static mut [u8], _rx_len: usize) {
     }
 
     fn abort_receive(&self) {
