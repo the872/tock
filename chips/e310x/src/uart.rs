@@ -91,15 +91,6 @@ impl Uart {
     pub fn initialize_gpio_pins(&self, tx: &gpio::GpioPin, rx: &gpio::GpioPin) {
         tx.iof0();
         rx.iof0();
-
-        // let regs = &*self.registers;
-
-        // regs.pseltxd.write(Psel::PIN.val(tx.into()));
-        // regs.pselrxd.write(Psel::PIN.val(rx.into()));
-        // regs.pselcts.write(Psel::PIN.val(cts.into()));
-        // regs.pselrts.write(Psel::PIN.val(rts.into()));
-
-        // self.enable();
     }
 
     fn set_baud_rate(&self, baud_rate: u32) {
@@ -115,31 +106,7 @@ impl Uart {
         let divisor = (clock_speed / baud_rate) - 1;
 
         regs.div.write(div::div.val(divisor));
-
-        // match baud_rate {
-        //     1200 => regs.baudrate.write(Baudrate::BAUDRATE::Baud1200),
-        //     2400 => regs.baudrate.write(Baudrate::BAUDRATE::Baud2400),
-        //     4800 => regs.baudrate.write(Baudrate::BAUDRATE::Baud4800),
-        //     9600 => regs.baudrate.write(Baudrate::BAUDRATE::Baud9600),
-        //     14400 => regs.baudrate.write(Baudrate::BAUDRATE::Baud14400),
-        //     19200 => regs.baudrate.write(Baudrate::BAUDRATE::Baud19200),
-        //     28800 => regs.baudrate.write(Baudrate::BAUDRATE::Baud28800),
-        //     38400 => regs.baudrate.write(Baudrate::BAUDRATE::Baud38400),
-        //     57600 => regs.baudrate.write(Baudrate::BAUDRATE::Baud57600),
-        //     76800 => regs.baudrate.write(Baudrate::BAUDRATE::Baud76800),
-        //     115200 => regs.baudrate.write(Baudrate::BAUDRATE::Baud115200),
-        //     230400 => regs.baudrate.write(Baudrate::BAUDRATE::Baud230400),
-        //     250000 => regs.baudrate.write(Baudrate::BAUDRATE::Baud250000),
-        //     460800 => regs.baudrate.write(Baudrate::BAUDRATE::Baud460800),
-        //     1000000 => regs.baudrate.write(Baudrate::BAUDRATE::Baud1M),
-        //     _ => panic!("Illegal baud rate"),
-        // }
     }
-
-    // pub fn enable(&self) {
-    //     let regs = &*self.registers;
-    //     regs.enable.write(Enable::ENABLE::ON);
-    // }
 
     fn enable_rx_interrupt(&self) {
         let regs = &*self.registers;
@@ -200,57 +167,7 @@ impl Uart {
                 });
             }
         }
-
-
-
-        // let tx = regs.event_txdrdy.is_set(Event::READY);
-
-        // if tx {
-        //     regs.event_txdrdy.write(Event::READY::CLEAR);
-
-        //     if self.len.get() == self.index.get() {
-        //         regs.task_stoptx.write(Task::ENABLE::SET);
-
-        //         // Signal client write done
-        //         self.client.map(|client| {
-        //             self.buffer.take().map(|buffer| {
-        //                 client.transmit_complete(buffer, uart::Error::CommandComplete);
-        //             });
-        //         });
-
-        //         return;
-        //     }
-
-        //     self.buffer.map(|buffer| {
-        //         regs.event_txdrdy.write(Event::READY::CLEAR);
-        //         regs.txd.set(buffer[self.index.get()] as u32);
-        //         let next_index = self.index.get() + 1;
-        //         self.index.set(next_index);
-        //     });
-        // }
     }
-
-    // pub unsafe fn send_byte(&self, byte: u8) {
-    //     let regs = &*self.registers;
-
-    //     self.index.set(1);
-    //     self.len.set(1);
-
-    //     regs.event_txdrdy.write(Event::READY::CLEAR);
-    //     self.enable_tx_interrupts();
-    //     regs.task_starttx.set(1);
-    //     regs.txd.set(byte as u32);
-    // }
-
-    // pub fn tx_ready(&self) -> bool {
-    //     let regs = &*self.registers;
-    //     regs.event_txdrdy.is_set(Event::READY)
-    // }
-
-    // fn rx_ready(&self) -> bool {
-    //     let regs = &*self.registers;
-    //     regs.event_rxdrdy.is_set(Event::READY)
-    // }
 }
 
 impl hil::uart::UART for Uart {
@@ -309,35 +226,10 @@ impl hil::uart::UART for Uart {
 
         // Enable and wait for the TX interrupt.
         self.enable_tx_interrupt();
-
-        // debug_gpio!(0, toggle);
-
-
-        // //
-        // //
-        // //
-        // let is_full = regs.txdata.is_set(txdata::full);
-
-        // self.index.set(1);
-        // self.len.set(tx_len);
-
-        // regs.event_txdrdy.write(Event::READY::CLEAR);
-        // self.enable_tx_interrupts();
-        // regs.task_starttx.set(1);
-        // regs.txd.set(tx_data[0] as u32);
-        // self.buffer.replace(tx_data);
     }
 
     // Blocking implementation
     fn receive(&self, rx_buffer: &'static mut [u8], rx_len: usize) {
-        // let regs = &*self.registers;
-        // regs.task_startrx.set(1);
-        // let mut i = 0;
-        // while i < rx_len {
-        //     while !self.rx_ready() {}
-        //     rx_buffer[i] = regs.rxd.get() as u8;
-        //     i += 1;
-        // }
     }
 
     fn abort_receive(&self) {
