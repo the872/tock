@@ -15,6 +15,9 @@ extern crate riscvimac;
 )]
 extern crate kernel;
 
+mod interrupts;
+
 pub mod chip;
 pub mod gpio;
 pub mod uart;
+pub mod watchdog;

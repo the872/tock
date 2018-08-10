@@ -106,7 +106,8 @@ impl Uart {
         let regs = &*self.registers;
 
         // Assume that the clock is running at 384 MHz.
-        let clock_speed = 384_000_000 as u32;
+        // let clock_speed = 384_000_000 as u32;
+        let clock_speed = 300_000_000 as u32;
 
         //            f_clk
         // f_baud = ---------
@@ -162,6 +163,7 @@ impl Uart {
 
     pub fn handle_interrupt(&self) {
         let regs = &*self.registers;
+        // debug_gpio!(0, toggle);
 
         // Get a copy so we can check each interrupt flag in the register.
         let pending_interrupts = regs.ip.extract();
@@ -307,6 +309,8 @@ impl hil::uart::UART for Uart {
 
         // Enable and wait for the TX interrupt.
         self.enable_tx_interrupt();
+
+        // debug_gpio!(0, toggle);
 
 
         // //

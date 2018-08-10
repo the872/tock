@@ -173,6 +173,11 @@ pub unsafe fn reset_handler() {
     riscvimac::init_memory();
     riscvimac::configure_trap_handler();
 
+    e310x::watchdog::WATCHDOG.disable();
+
+
+    riscvimac::enable_plic_interrupts();
+
 
 
     // sam4l::pm::PM.setup_system_clock(sam4l::pm::SystemClockSource::PllExternalOscillatorAt48MHz {
@@ -187,12 +192,14 @@ pub unsafe fn reset_handler() {
 
     let board_kernel = static_init!(kernel::Kernel, kernel::Kernel::new(&PROCESSES));
 
-    // // Configure kernel debug gpios as early as possible
-    // kernel::debug::assign_gpios(
-    //     Some(&sam4l::gpio::PA[13]),
-    //     Some(&sam4l::gpio::PA[15]),
-    //     Some(&sam4l::gpio::PA[14]),
-    // );
+    // Configure kernel debug gpios as early as possible
+    kernel::debug::assign_gpios(
+        Some(&e310x::gpio::PORT[22]),
+        Some(&e310x::gpio::PORT[22]),
+        Some(&e310x::gpio::PORT[22]),
+        // Some(&sam4l::gpio::PA[15]),
+        // Some(&sam4l::gpio::PA[14]),
+    );
 
     let mut chip = e310x::chip::E310x::new();
 
@@ -201,16 +208,16 @@ pub unsafe fn reset_handler() {
     // // Initialize USART0 for Uart
     // e310x::usart::USART0.set_mode(sam4l::usart::UsartMode::Uart);
 
-    // // Create a shared UART channel for the console and for kernel debug.
-    // let uart_mux = static_init!(
-    //     UartMux<'static>,
-    //     UartMux::new(
-    //         &sam4l::usart::USART0,
-    //         &mut capsules::virtual_uart::RX_BUF,
-    //         115200
-    //     )
-    // );
-    // hil::uart::UART::set_client(&sam4l::usart::USART0, uart_mux);
+    // Create a shared UART channel for the console and for kernel debug.
+    let uart_mux = static_init!(
+        UartMux<'static>,
+        UartMux::new(
+            &e310x::uart::UART0,
+            &mut capsules::virtual_uart::RX_BUF,
+            115200
+        )
+    );
+    hil::uart::UART::set_client(&e310x::uart::UART0, uart_mux);
 
     // // Create a UartDevice for the console.
     // let console_uart = static_init!(UartDevice, UartDevice::new(uart_mux, true));
@@ -463,6 +470,9 @@ pub unsafe fn reset_handler() {
 
 
 
+    hil::gpio::Pin::make_output(&e310x::gpio::PORT[22]);
+    hil::gpio::Pin::set(&e310x::gpio::PORT[22]);
+
     hil::gpio::Pin::make_output(&e310x::gpio::PORT[19]);
     hil::gpio::Pin::set(&e310x::gpio::PORT[19]);
 
@@ -505,24 +515,24 @@ pub unsafe fn reset_handler() {
 
     // hail.console.initialize();
 
-    // // Create virtual device for kernel debug.
-    // let debugger_uart = static_init!(UartDevice, UartDevice::new(uart_mux, false));
-    // debugger_uart.setup();
-    // let debugger = static_init!(
-    //     kernel::debug::DebugWriter,
-    //     kernel::debug::DebugWriter::new(
-    //         debugger_uart,
-    //         &mut kernel::debug::OUTPUT_BUF,
-    //         &mut kernel::debug::INTERNAL_BUF,
-    //     )
-    // );
-    // hil::uart::UART::set_client(debugger_uart, debugger);
+    // Create virtual device for kernel debug.
+    let debugger_uart = static_init!(UartDevice, UartDevice::new(uart_mux, false));
+    debugger_uart.setup();
+    let debugger = static_init!(
+        kernel::debug::DebugWriter,
+        kernel::debug::DebugWriter::new(
+            debugger_uart,
+            &mut kernel::debug::OUTPUT_BUF,
+            &mut kernel::debug::INTERNAL_BUF,
+        )
+    );
+    hil::uart::UART::set_client(debugger_uart, debugger);
 
-    // let debug_wrapper = static_init!(
-    //     kernel::debug::DebugWriterWrapper,
-    //     kernel::debug::DebugWriterWrapper::new(debugger)
-    // );
-    // kernel::debug::set_debug_writer_wrapper(debug_wrapper);
+    let debug_wrapper = static_init!(
+        kernel::debug::DebugWriterWrapper,
+        kernel::debug::DebugWriterWrapper::new(debugger)
+    );
+    kernel::debug::set_debug_writer_wrapper(debug_wrapper);
 
     // // Reset the nRF and setup the UART bus.
     // hail.nrf51822.reset();
@@ -531,9 +541,12 @@ pub unsafe fn reset_handler() {
     // // Uncomment to measure overheads for TakeCell and MapCell:
     // // test_take_map_cell::test_take_map_cell();
 
-    // debug!("Initialization complete. Entering main loop");
 
     e310x::uart::UART0.initialize_gpio_pins(&e310x::gpio::PORT[17], &e310x::gpio::PORT[16]);
+
+
+    debug!("Initialization complete. Entering main loop");
+    // debug!("hibrad");
 
     extern "C" {
         /// Beginning of the ROM region containing app images.

@@ -6,6 +6,7 @@
 #[macro_use(register_bitfields, register_bitmasks)]
 extern crate kernel;
 
+pub mod plic;
 pub mod support;
 
 extern "C" {
@@ -121,6 +122,14 @@ pub unsafe fn configure_trap_handler() {
 	     : "r"(&_start_trap)
 	     :
 	     : "volatile");
+}
+
+/// Enable all PLIC interrupts so that individual peripheral drivers do not have
+/// to manage these.
+pub unsafe fn enable_plic_interrupts() {
+	plic::disable_all();
+	plic::clear_all_pending();
+	plic::enable_all();
 }
 
 /// Need this defined.
