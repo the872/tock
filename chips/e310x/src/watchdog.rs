@@ -77,46 +77,5 @@ impl Watchdog {
     						cfg::enalways::CLEAR +
     						cfg::encoreawake::CLEAR);
     	self.feed();
-
-
-    	//     pub fn freeze(self) -> Wdog {
-    	//         unsafe {
-    	//             (*WDOG::ptr()).wdogkey.write(|w| w.bits(0x51F15E));
-    	//             (*WDOG::ptr()).wdogcfg.write(|w| w
-    	//                                          .scale().bits(self.scale)
-    	//                                          .rsten().bit(self.reset)
-    	//                                          .zerocmp().bit(self.zero_cmp)
-    	//                                          .enalways().bit(self.enable)
-    	//                                          .encoreawake().bit(self.awake));
-    	//         }
-    	//         Wdog { _0: () }
-    	//         WdogCfg {
-    	//             _0: (),
-    	//             enable: false,
-    	//             awake: false,
-    	//             reset: false,
-    	//             zero_cmp: false,
-    	//             scale: 0,
-    	//         }
-    	//     }
-    	// }
-
-    	// pub struct Wdog {
-    	//     _0: (),
-    	// }
-
-    	// impl Wdog {
-    	//     #[inline]
-    	//     fn unlock(&mut self) {
-    	//         unsafe { (*WDOG::ptr()).wdogkey.write(|w| w.bits(0x51F15E)) };
-    	//     }
-
-    	//     pub fn is_pending(&self) -> bool {
-    	//         unsafe { (*WDOG::ptr()).wdogcfg.read().cmpip().bit() }
-    	//     }
-
-    	//     pub fn feed(&mut self) {
-    	//         self.unlock();
-    	//         unsafe { (*WDOG::ptr()).wdogfeed.write(|w| w.bits(0xD09F00D)) };
     }
 }
