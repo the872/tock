@@ -89,6 +89,10 @@ pub unsafe fn reset_handler() {
     riscvimac::configure_trap_handler();
 
     e310x::watchdog::WATCHDOG.disable();
+    e310x::rtc::RTC.disable();
+    e310x::pwm::PWM0.disable();
+    e310x::pwm::PWM1.disable();
+    e310x::pwm::PWM2.disable();
 
 
     riscvimac::enable_plic_interrupts();

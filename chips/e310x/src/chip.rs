@@ -29,20 +29,16 @@ impl kernel::Chip for E310x {
 
         unsafe {
             while let Some(interrupt) = plic::next_pending() {
-                // debug!("woo {}", interrupt);
 
                 match interrupt {
-                    interrupts::RTC => { /* Not sure why this interrupt is happening. */}
                     interrupts::UART0 => uart::UART0.handle_interrupt(),
                     index @ interrupts::GPIO0..interrupts::GPIO31 => gpio::PORT[index as usize].handle_interrupt(),
-                    // _ => debug!("PLIC index not supported by Tock"),
-                    _=>{}
+                    _ => debug!("PLIC index not supported by Tock {}", interrupt),
                 }
-                // This shouldn't be here, need to fix the RTC interrupting
-                // too much.
-                if interrupt == interrupts::UART0 {
-                    plic::complete(interrupt);
-                }
+
+                // Mark that we are done with this interrupt and the hardware
+                // can clear it.
+                plic::complete(interrupt);
             }
         }
     }
