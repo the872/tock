@@ -95,6 +95,9 @@ pub unsafe fn reset_handler() {
     e310x::pwm::PWM2.disable();
 
 
+    e310x::prci::PRCI.set_clock_frequency(e310x::prci::ClockFrequency::Freq18Mhz);
+
+
     riscvimac::enable_plic_interrupts();
 
 

@@ -76,7 +76,7 @@ pub struct UartParams {
 }
 
 impl Uart {
-    pub const fn new() -> Uart {
+    const fn new() -> Uart {
         Uart {
             registers: UART0_BASE,
             client: OptionalCell::empty(),

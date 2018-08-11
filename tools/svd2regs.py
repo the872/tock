@@ -272,6 +272,8 @@ class BitfieldFieldEnum(CodeBlock):
     @staticmethod
     def fields(enum):
         def identifier(desc):
+            if not desc:
+                return None
             if any(desc.startswith(str(digit)) for digit in range(10)):
                 desc = "_{}".format(desc)
             i = pydentifier.upper_camel(desc)

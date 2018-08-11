@@ -49,7 +49,7 @@ pub struct Watchdog {
 }
 
 impl Watchdog {
-    pub const fn new() -> Watchdog {
+    const fn new() -> Watchdog {
         Watchdog {
             registers: WATCHDOG_BASE,
         }

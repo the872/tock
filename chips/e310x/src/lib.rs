@@ -24,3 +24,4 @@ pub mod uart;
 pub mod watchdog;
 pub mod rtc;
 pub mod pwm;
+pub mod prci;
