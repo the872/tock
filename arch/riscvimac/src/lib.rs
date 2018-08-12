@@ -8,6 +8,7 @@ extern crate kernel;
 
 pub mod plic;
 pub mod support;
+pub mod syscall;
 
 extern "C" {
 	// External function defined by the board main.rs.
@@ -108,15 +109,13 @@ pub unsafe fn init_memory() {
 /// The trap handler is called on exceptions and for interrupts.
 pub unsafe fn configure_trap_handler() {
 	asm!("
-		// The csrrw instruction reads a Control and Status Register (CSR)
-		// into a integer register, while atomically updating the value of the
-		// CSR.
+		// The csrw instruction writes a Control and Status Register (CSR)
+		// with a new value.
 		//
-		// The CSR we care about is 0x305 (mtvec, 'Machine trap-handler base
-		// address.'). We do not care about its old value, so we 'store' that to
-		// the fixed `zero` register, and then we set the CSR with the address
-		// of the _start_trap function.
-		csrrw zero, 0x305, $0
+		// CSR 0x305 (mtvec, 'Machine trap-handler base address.') sets the address
+    // of the trap handler. We do not care about its old value, so we don't
+    // bother reading it.
+		csrw 0x305, $0
 		"
 	     :
 	     : "r"(&_start_trap)
