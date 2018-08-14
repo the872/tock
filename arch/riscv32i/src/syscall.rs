@@ -1,5 +1,14 @@
-//! Implementation of the architecture-specific portions of the kernel-userland
-//! system call interface.
+//! Pseudo kernel-userland system call interface.
+//!
+//! This is for platforms that only include the "Machine Mode" privilege level.
+//! Since these chips don't have hardware support for user mode, we have to fake
+//! it. This means the apps have to be highly trusted as there is no real separation
+//! between the kernel and apps.
+//!
+//! Note: this really only exists so we can demonstrate Tock running on actual
+//! RISC-V hardware. Really, this is very undesirable for Tock as it violates
+//! the safety properties of the OS. As hardware starts to exist that supports M
+//! and U modes we will remove this.
 
 use core::ptr::{read_volatile, write_volatile};
 
