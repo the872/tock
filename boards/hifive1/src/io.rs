@@ -1,7 +1,7 @@
 use core::fmt::Write;
 use core::panic::PanicInfo;
 use core::str;
-use riscvimac;
+use riscv32i;
 use kernel::debug;
 use kernel::hil::gpio;
 use kernel::hil::led;
@@ -40,7 +40,7 @@ pub unsafe extern "C" fn panic_fmt(pi: &PanicInfo) -> ! {
         &mut [led_red],
         writer,
         pi,
-        &riscvimac::support::nop,
+        &riscv32i::support::nop,
         &PROCESSES,
     )
 }

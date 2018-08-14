@@ -17,7 +17,7 @@ opt-level = "z"
 debug = true
 
 [dependencies]
-riscvimac = { path = "../../arch/riscvimac" }
+riscv32i = { path = "../../arch/riscv32i" }
 capsules = { path = "../../capsules" }
 kernel = { path = "../../kernel" }
 e310x = { path = "../../chips/e310x" }

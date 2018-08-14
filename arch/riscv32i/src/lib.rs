@@ -1,4 +1,4 @@
-#![crate_name = "riscvimac"]
+#![crate_name = "riscv32i"]
 #![crate_type = "rlib"]
 #![feature(asm, const_fn, lang_items, global_asm)]
 #![no_std]

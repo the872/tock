@@ -4,6 +4,6 @@ version = "0.1.0"
 authors = ["Tock Project Developers <tock-dev@googlegroups.com>"]
 
 [dependencies]
-riscvimac = { path = "../../arch/riscvimac" }
+riscv32i = { path = "../../arch/riscv32i" }
 kernel = { path = "../../kernel" }
 

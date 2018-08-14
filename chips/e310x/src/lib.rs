@@ -4,7 +4,7 @@
 #![crate_name = "e310x"]
 #![crate_type = "rlib"]
 
-extern crate riscvimac;
+extern crate riscv32i;
 
 #[allow(unused_imports)]
 #[macro_use(

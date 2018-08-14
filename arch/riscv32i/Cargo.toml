@@ -1,5 +1,5 @@
 [package]
-name = "riscvimac"
+name = "riscv32i"
 version = "0.1.0"
 authors = ["Tock Project Developers <tock-dev@googlegroups.com>"]
 

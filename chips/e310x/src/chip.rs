@@ -1,5 +1,5 @@
-use riscvimac;
-use riscvimac::plic;
+use riscv32i;
+use riscv32i::plic;
 use kernel;
 use gpio;
 use interrupts;
@@ -49,8 +49,8 @@ impl kernel::Chip for E310x {
 
     fn sleep(&self) {
         // unsafe {
-            // riscvimac::support::wfi();
-            riscvimac::support::nop();
+            // riscv32i::support::wfi();
+            riscv32i::support::nop();
         // }
     }
 
@@ -58,6 +58,6 @@ impl kernel::Chip for E310x {
     where
         F: FnOnce() -> R,
     {
-        riscvimac::support::atomic(f)
+        riscv32i::support::atomic(f)
     }
 }

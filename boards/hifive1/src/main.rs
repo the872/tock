@@ -10,7 +10,7 @@ extern crate capsules;
 #[allow(unused_imports)]
 #[macro_use(create_capability, debug, debug_gpio, static_init)]
 extern crate kernel;
-extern crate riscvimac;
+extern crate riscv32i;
 extern crate e310x;
 
 // use capsules::virtual_alarm::{MuxAlarm, VirtualMuxAlarm};
@@ -86,8 +86,8 @@ impl Platform for HiFive1 {
 #[no_mangle]
 pub unsafe fn reset_handler() {
     // Basic setup of the platform.
-    riscvimac::init_memory();
-    riscvimac::configure_trap_handler();
+    riscv32i::init_memory();
+    riscv32i::configure_trap_handler();
 
     e310x::watchdog::WATCHDOG.disable();
     e310x::rtc::RTC.disable();
@@ -99,7 +99,7 @@ pub unsafe fn reset_handler() {
     e310x::prci::PRCI.set_clock_frequency(e310x::prci::ClockFrequency::Freq18Mhz);
 
 
-    riscvimac::enable_plic_interrupts();
+    riscv32i::enable_plic_interrupts();
 
 
     let process_mgmt_cap = create_capability!(capabilities::ProcessManagementCapability);
@@ -298,7 +298,7 @@ pub unsafe fn reset_handler() {
 
     kernel::procs::load_processes(
         board_kernel,
-        &riscvimac::syscall::SysCall::new(),
+        &riscv32i::syscall::SysCall::new(),
         &_sapps as *const u8,
         &mut APP_MEMORY,
         &mut PROCESSES,
