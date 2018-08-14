@@ -8,7 +8,7 @@
 
 extern crate capsules;
 #[allow(unused_imports)]
-#[macro_use(debug, debug_gpio, static_init)]
+#[macro_use(create_capability, debug, debug_gpio, static_init)]
 extern crate kernel;
 extern crate riscvimac;
 extern crate e310x;
@@ -16,6 +16,7 @@ extern crate e310x;
 // use capsules::virtual_alarm::{MuxAlarm, VirtualMuxAlarm};
 // use capsules::virtual_i2c::{I2CDevice, MuxI2C};
 use capsules::virtual_uart::{UartDevice, UartMux};
+use kernel::capabilities;
 use kernel::hil;
 use kernel::Platform;
 
@@ -99,6 +100,12 @@ pub unsafe fn reset_handler() {
 
 
     riscvimac::enable_plic_interrupts();
+
+
+    let process_mgmt_cap = create_capability!(capabilities::ProcessManagementCapability);
+    let main_loop_cap = create_capability!(capabilities::MainLoopCapability);
+    // let memory_allocation_cap = create_capability!(capabilities::MemoryAllocationCapability);
+
 
 
 
@@ -296,6 +303,7 @@ pub unsafe fn reset_handler() {
         &mut APP_MEMORY,
         &mut PROCESSES,
         FAULT_RESPONSE,
+        &process_mgmt_cap,
     );
-    board_kernel.kernel_loop(&hifive1, &mut chip, None);
+    board_kernel.kernel_loop(&hifive1, &mut chip, None, &main_loop_cap);
 }
