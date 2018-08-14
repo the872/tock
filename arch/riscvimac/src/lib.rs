@@ -11,24 +11,24 @@ pub mod support;
 pub mod syscall;
 
 extern "C" {
-	// External function defined by the board main.rs.
+	  // External function defined by the board main.rs.
     fn reset_handler();
 
     // Where the end of the stack region is (and hence where the stack should
     // start).
     static _estack: u32;
 
-    // Address of _start_trap
+    // Address of _start_trap.
     static _start_trap: u32;
 
-    // Boundaries of the .bss section
+    // Boundaries of the .bss section.
     static mut _szero: u32;
     static mut _ezero: u32;
 
     // Where the .data section is stored in flash.
     static mut _etext: u32;
 
-    // Boundaries of the .data section
+    // Boundaries of the .data section.
     static mut _srelocate: u32;
     static mut _erelocate: u32;
 }
@@ -131,15 +131,6 @@ pub unsafe fn enable_plic_interrupts() {
 	plic::enable_all();
 }
 
-/// Need this defined.
-///
-/// Need to make this real to actually support tock.
-#[no_mangle]
-pub unsafe extern "C" fn switch_to_user(user_stack: *const u8, process_got: *const u8) -> *mut u8 {
-    user_stack as *mut u8
-}
-
-
 /// Trap entry point (_start_trap)
 ///
 /// Saves caller saved registers ra, t0..6, a0..7, calls _start_trap_rust,
@@ -211,11 +202,6 @@ pub extern "C" fn start_trap_rust() {
     // }
 }
 
-
-// /// Default Trap Handler
-// #[no_mangle]
-// #[linkage = "weak"]
-// pub fn trap_handler(_: mcause::Trap) {}
 
 // Make sure there is an abort when linking.
 //
