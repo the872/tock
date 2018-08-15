@@ -3,7 +3,7 @@ name = "e310x"
 version = "0.1.0"
 dependencies = [
  "kernel 0.1.0",
- "riscvimac 0.1.0",
+ "riscv32i 0.1.0",
 ]
 
 [[package]]
@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "riscvimac"
+name = "riscv32i"
 version = "0.1.0"
 dependencies = [
  "kernel 0.1.0",

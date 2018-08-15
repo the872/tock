@@ -4,7 +4,7 @@
 
 #![no_std]
 #![no_main]
-#![feature(panic_implementation)]
+#![feature(panic_implementation, asm)]
 
 extern crate capsules;
 #[allow(unused_imports)]
@@ -250,7 +250,7 @@ pub unsafe fn reset_handler() {
     hil::gpio::Pin::set(&e310x::gpio::PORT[19]);
 
     hil::gpio::Pin::make_output(&e310x::gpio::PORT[21]);
-    hil::gpio::Pin::set(&e310x::gpio::PORT[21]);
+    hil::gpio::Pin::clear(&e310x::gpio::PORT[21]);
 
     let hifive1 = HiFive1 {
         // console: console,
@@ -288,6 +288,22 @@ pub unsafe fn reset_handler() {
 
 
     debug!("Initialization complete. Entering main loop");
+
+
+    // testing some mret jump-around code
+
+    // asm!("
+    //     // set mepc to 0x20c00000
+    //     lui a0, %hi(0x20c00000)
+    //     addi a0, a0, %lo(0x20c00000)
+    //     csrw 0x341, a0
+
+    //     // now go to what is in mepc
+    //     mret
+    //     " ::::);
+
+
+
 
     extern "C" {
         /// Beginning of the ROM region containing app images.

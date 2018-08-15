@@ -33,7 +33,8 @@ impl kernel::Chip for E310x {
                 match interrupt {
                     interrupts::UART0 => uart::UART0.handle_interrupt(),
                     index @ interrupts::GPIO0..interrupts::GPIO31 => gpio::PORT[index as usize].handle_interrupt(),
-                    _ => debug!("PLIC index not supported by Tock {}", interrupt),
+                    // _ => debug!("PLIC index not supported by Tock {}", interrupt),
+                    _ => debug!("Pidx {}", interrupt),
                 }
 
                 // Mark that we are done with this interrupt and the hardware
